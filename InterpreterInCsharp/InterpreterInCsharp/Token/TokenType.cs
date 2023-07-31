@@ -10,6 +10,9 @@ public enum TokenType
     //Operators
     Assign,
     Plus,
+    Minus,
+    Slash,
+    Star,
     //Delimiters
     Comma,
     Semicolon,
@@ -19,5 +22,9 @@ public enum TokenType
     Rbrace,
     //Keywords
     Function,
-    Let
+    Let,
+    //Comparison
+    Bang,
+    LessThan,
+    GreaterThan,
 }

@@ -16,7 +16,6 @@ public class Lexer
     public Token NextToken()
     {
         Token token;
-        Console.WriteLine($"checking character: {_ch}");
         SkipWhitespace();
         switch (_ch)
         {
@@ -24,8 +23,28 @@ public class Lexer
                 token = new Token(TokenType.Assign, _ch);
                 break;
             case ';':
-                Console.WriteLine("semicolon found");
                 token = new Token(TokenType.Semicolon, _ch);
+                break;
+            case '!':
+                token = new Token(TokenType.Bang, _ch);
+                break;
+            case '*':
+                token = new Token(TokenType.Star, _ch);
+                break;
+            case '/':
+                token = new Token(TokenType.Slash, _ch);
+                break;
+            case '+':
+                token = new Token(TokenType.Plus, _ch);
+                break;
+            case '-':
+                token = new Token(TokenType.Minus, _ch);
+                break;
+            case '<':
+                token = new Token(TokenType.LessThan, _ch);
+                break;
+            case '>':
+                token = new Token(TokenType.GreaterThan, _ch);
                 break;
             case '(':
                 token = new Token(TokenType.Lparen, _ch);
@@ -35,9 +54,6 @@ public class Lexer
                 break;
             case ',':
                 token = new Token(TokenType.Comma, _ch);
-                break;
-            case '+':
-                token = new Token(TokenType.Plus, _ch);
                 break;
             case '{':
                 token = new Token(TokenType.Lbrace, _ch);
@@ -66,8 +82,7 @@ public class Lexer
                 
                 break;
 
-        } 
-        Console.WriteLine("Reading character after switch");
+        }
         ReadChar();
         return token;
     }
@@ -77,10 +92,6 @@ public class Lexer
         _ch = _readPosition >= _input.Length ? '\0' : _input[_readPosition];
         _position = _readPosition;
         _readPosition += 1;
-        
-        Console.WriteLine($"_ch: {_ch}");
-        Console.WriteLine($"_position: {_position}");
-        Console.WriteLine($"_readPosition: {_readPosition}");
     }
     
     private string ReadNumber()
@@ -88,11 +99,9 @@ public class Lexer
         var initialPosition = _position;
         while (IsDigit(_ch))
         {
-            Console.WriteLine($"{_ch} is digit");
             ReadChar();
         }
         var numberResult = _input[initialPosition.._position];
-        Console.WriteLine($"numberResult: {numberResult}");
         return numberResult;
     }
     
@@ -101,11 +110,9 @@ public class Lexer
         var initialPosition = _position;
         while (IsLegalIdentifierCharacter(_ch))
         {
-            Console.WriteLine($"{_ch} is legal identifier character");
             ReadChar();
         }
         var identifierResult = _input[initialPosition.._position];
-        Console.WriteLine($"identifierResult: {identifierResult}");
         return identifierResult;
     }
 
@@ -113,7 +120,6 @@ public class Lexer
     {
         while (char.IsWhiteSpace(_ch))
         {
-            Console.WriteLine($"{_ch} is whitespace");
             ReadChar();
         }
     }

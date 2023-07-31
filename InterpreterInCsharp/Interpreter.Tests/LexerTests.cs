@@ -9,11 +9,16 @@ public class LexerTests
     {
         var input = @"let five = 5;
 let ten = 10;
+
 let add = fn(x, y) {
     x + y;
 }
 
-let result = add(five, ten);";
+let result = add(five, ten);
+
+!-/*5;
+5 < 10 > 5;
+";
         
         var tokens = new List<Token>
         {
@@ -54,6 +59,19 @@ let result = add(five, ten);";
             new(TokenType.Comma, ","),
             new(TokenType.Ident, "ten"),
             new(TokenType.Rparen, ")"),
+            new(TokenType.Semicolon, ";"),
+            
+            new(TokenType.Bang, "!"),
+            new(TokenType.Minus, "-"),
+            new(TokenType.Slash, "/"),
+            new(TokenType.Star, "*"),
+            new(TokenType.Int, "5"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.Int, "5"),
+            new(TokenType.LessThan, "<"),
+            new(TokenType.Int, "10"),
+            new(TokenType.GreaterThan, ">"),
+            new(TokenType.Int, "5"),
             new(TokenType.Semicolon, ";"),
             new(TokenType.Eof, "")
         };
