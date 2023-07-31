@@ -18,6 +18,15 @@ let result = add(five, ten);
 
 !-/*5;
 5 < 10 > 5;
+
+if (5 < 10) {
+       return true;
+   } else {
+       return false;
+}
+
+19 == 19;
+19 != 20;
 ";
         
         var tokens = new List<Token>
@@ -73,6 +82,34 @@ let result = add(five, ten);
             new(TokenType.GreaterThan, ">"),
             new(TokenType.Int, "5"),
             new(TokenType.Semicolon, ";"),
+            
+            new(TokenType.If, "if"),
+            new(TokenType.Lparen, "("),
+            new(TokenType.Int, "5"),
+            new(TokenType.LessThan, "<"),
+            new(TokenType.Int, "10"),
+            new(TokenType.Rparen, ")"),
+            new(TokenType.Lbrace, "{"),
+            new(TokenType.Return, "return"),
+            new(TokenType.True, "true"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.Rbrace, "}"),
+            new(TokenType.Else, "else"),
+            new(TokenType.Lbrace, "{"),
+            new(TokenType.Return, "return"),
+            new(TokenType.False, "false"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.Rbrace, "}"),
+            
+            new(TokenType.Int, "19"),
+            new(TokenType.IsEqual, "=="),
+            new(TokenType.Int, "19"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.Int, "19"),
+            new(TokenType.NotEqual, "!="),
+            new(TokenType.Int, "20"),
+            new(TokenType.Semicolon, ";"),
+
             new(TokenType.Eof, "")
         };
 

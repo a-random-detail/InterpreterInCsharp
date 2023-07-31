@@ -23,8 +23,15 @@ public enum TokenType
     //Keywords
     Function,
     Let,
+    If,
+    Else,
+    Return,
+    True,
+    False,
     //Comparison
     Bang,
     LessThan,
     GreaterThan,
+    IsEqual,
+    NotEqual
 }

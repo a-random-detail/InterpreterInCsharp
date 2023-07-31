@@ -20,13 +20,31 @@ public class Lexer
         switch (_ch)
         {
             case '=':
-                token = new Token(TokenType.Assign, _ch);
+                if (PeekChar() == '=')
+                {
+                    var ch = _ch;
+                    ReadChar();
+                    token = new Token(TokenType.IsEqual, $"{ch}{_ch}");
+                }
+                else
+                {
+                    token = new Token(TokenType.Assign, _ch);
+                }
                 break;
             case ';':
                 token = new Token(TokenType.Semicolon, _ch);
                 break;
             case '!':
-                token = new Token(TokenType.Bang, _ch);
+                if (PeekChar() == '=')
+                {
+                    var ch = _ch;
+                    ReadChar();
+                    token = new Token(TokenType.NotEqual, $"{ch}{_ch}");
+                }
+                else
+                {
+                    token = new Token(TokenType.Bang, _ch);
+                }
                 break;
             case '*':
                 token = new Token(TokenType.Star, _ch);
@@ -85,6 +103,11 @@ public class Lexer
         }
         ReadChar();
         return token;
+    }
+
+    private char PeekChar()
+    {
+        return _readPosition >= _input.Length ? '\0' : _input[_readPosition];
     }
 
     private void ReadChar()
