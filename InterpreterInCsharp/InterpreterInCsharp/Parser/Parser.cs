@@ -4,6 +4,7 @@ namespace InterpreterInCsharp.Parser;
 
 public struct Parser
 {
+    private readonly List<string> _errors = new();
     private readonly Lexer _lexer;
     private Token _curToken;
     private Token _peekToken;
@@ -47,7 +48,7 @@ public struct Parser
         };
     }
 
-private LetStatement? ParseLetStatement()
+    private LetStatement? ParseLetStatement()
     {
         var statementToken = _curToken;
         if (!ExpectPeekTokenType(TokenType.Ident))
@@ -72,12 +73,23 @@ private LetStatement? ParseLetStatement()
 
     private bool ExpectPeekTokenType(TokenType type)
     {
-        if (!PeekTokenIs(type)) return false;
+        if (!PeekTokenIs(type))
+        {
+            PeekError(type);
+            return false;
+        }
         
         NextToken();
         return true;
     }
     
+    private void PeekError(TokenType type)
+    {
+        var msg = $"expected next token to be {type}, got {_peekToken.Type} instead";
+        _errors.Add(msg);
+    }
+    
+    public List<string> Errors => _errors;
 
     private bool PeekTokenIs(TokenType type) => _peekToken.Type == type;
 
