@@ -27,7 +27,6 @@ public struct Parser
         while (_curToken.Type != TokenType.Eof)
         {
             var statement = ParseStatement();
-            Console.WriteLine($"statement: {statement}");
             if (statement != null)
             {
                 program.Statements.Add(statement);
