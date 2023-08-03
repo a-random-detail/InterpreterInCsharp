@@ -24,7 +24,7 @@ public struct Parser
     public MonkeyProgram? ParseProgram()
     {
         var program = new MonkeyProgram(new List<Statement>());
-        while (_curToken.Type != TokenType.Eof)
+        while (!CurrentTokenIs(TokenType.Eof))
         {
             var statement = ParseStatement();
             if (statement != null)
