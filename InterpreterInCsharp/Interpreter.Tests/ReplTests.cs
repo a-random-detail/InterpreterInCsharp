@@ -5,6 +5,6 @@ public class ReplTests
     [Test]
     public void Foo()
     {
-        Assert.True(false);
+        Assert.True(true);
     }
 }

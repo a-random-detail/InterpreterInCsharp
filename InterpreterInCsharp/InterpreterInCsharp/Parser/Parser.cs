@@ -44,21 +44,20 @@ public struct Parser
         {
             TokenType.Let => ParseLetStatement(),
             _ => null,
-
         };
     }
 
 private LetStatement? ParseLetStatement()
     {
         var statementToken = _curToken;
-        if (!ExpectPeek(TokenType.Ident))
+        if (!ExpectPeekTokenType(TokenType.Ident))
         {
             return null;
         }
 
         var name = new Identifier(_curToken, _curToken.Literal);
         
-        if (!ExpectPeek(TokenType.Assign))
+        if (!ExpectPeekTokenType(TokenType.Assign))
         {
             return null;
         }
@@ -71,14 +70,14 @@ private LetStatement? ParseLetStatement()
         return new LetStatement(statementToken, name, new Expression(_curToken));
     }
 
-    private bool ExpectPeek(TokenType type)
+    private bool ExpectPeekTokenType(TokenType type)
     {
         if (!PeekTokenIs(type)) return false;
         
         NextToken();
         return true;
-
     }
+    
 
     private bool PeekTokenIs(TokenType type) => _peekToken.Type == type;
 
