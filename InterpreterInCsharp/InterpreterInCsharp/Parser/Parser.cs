@@ -44,8 +44,21 @@ public struct Parser
         return _curToken.Type switch
         {
             TokenType.Let => ParseLetStatement(),
+            TokenType.Return => ParseReturnStatement(),
             _ => null,
         };
+    }
+
+    private ReturnStatement? ParseReturnStatement()
+    {
+        var token = _curToken;
+        NextToken();
+        
+        while(CurrentTokenIs(TokenType.Semicolon)) {
+            NextToken();
+        }
+
+        return new ReturnStatement(token, null);
     }
 
     private LetStatement? ParseLetStatement()

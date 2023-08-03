@@ -19,7 +19,7 @@ let foobar = 838383;
         var program = parser.ParseProgram();
         CheckParserErrors(parser);
         Assert.NotNull(program);
-        Assert.AreEqual(3, program.Statements.Count);
+        Assert.That(program.Statements.Count, Is.EqualTo(3));
 
 
         var expectedIdentifiers = new[]
@@ -48,6 +48,29 @@ let 838383;";
         Assert.That(parser.Errors.Count, Is.EqualTo(3));
     }
 
+    [Test]
+    public void TestReturnStatements()
+    {
+        var input = @" return 5;
+return 18;
+return 839838;";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        
+        var program = parser.ParseProgram();
+        
+        CheckParserErrors(parser);
+        Assert.NotNull(program);
+        Assert.That(program.Statements.Count, Is.EqualTo(3));
+
+        foreach (var statement in program.Statements)
+        {
+            Assert.That(statement.TokenLiteral, Is.EqualTo("return"));
+            Assert.IsInstanceOf<ReturnStatement>(statement);
+        }
+        
+    }
+
     private void CheckParserErrors(Parser parser)
     {
         string errors = string.Join(",", parser.Errors);
@@ -56,10 +79,10 @@ let 838383;";
 
     private void TestLetStatement(Statement statement, string expectedIdentifier)
     {
-        Assert.AreEqual("let", statement.TokenLiteral);
+        Assert.That(statement.TokenLiteral, Is.EqualTo("let"));
         Assert.IsInstanceOf<LetStatement>(statement);
         var letStatement = (LetStatement) statement;
-        Assert.AreEqual(expectedIdentifier, letStatement.Identifier.Value);
-        Assert.AreEqual(expectedIdentifier, letStatement.Identifier.TokenLiteral);
+        Assert.That(letStatement.Identifier.Value, Is.EqualTo(expectedIdentifier));
+        Assert.That(letStatement.Identifier.TokenLiteral, Is.EqualTo(expectedIdentifier));
     }
 }
