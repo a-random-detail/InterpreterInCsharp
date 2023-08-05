@@ -2,6 +2,7 @@ using InterpreterInCsharp;
 
 namespace Interpreter.Tests;
 
+[TestFixture]
 public class LexerTests
 {
     [Test]

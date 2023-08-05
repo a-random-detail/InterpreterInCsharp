@@ -4,6 +4,7 @@ using InterpreterInCsharp.Parser;
 
 namespace Interpreter.Tests;
 
+[TestFixture]
 public class ParserTests
 {
     [Test]

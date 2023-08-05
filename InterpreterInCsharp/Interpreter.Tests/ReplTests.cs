@@ -1,5 +1,6 @@
 namespace Interpreter.Tests;
 
+[TestFixture]
 public class ReplTests
 {
     [Test]

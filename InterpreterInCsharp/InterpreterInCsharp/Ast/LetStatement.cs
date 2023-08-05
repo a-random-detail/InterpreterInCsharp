@@ -1,7 +1,6 @@
 namespace InterpreterInCsharp.Ast;
 
-public record LetStatement(Token Token, Identifier Identifier, Expression Value) : Statement(Token)
-{
-    public string TokenLiteral => Token.Literal;
-    public string StatementNode => Token.Literal;
+public record LetStatement(Token Token, Identifier Identifier, Expression? Value) : Statement(Token)
+{ 
+    public override string String => $"{TokenLiteral} {Identifier.String} = {Value?.String};";
 }
