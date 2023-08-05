@@ -72,6 +72,25 @@ return 839838;";
         
     }
 
+    [Test]
+    public void TestIdentifierExpression()
+    {
+        var input = "foobar;";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+
+        CheckParserErrors(parser);
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = (ExpressionStatement) statement;
+        Assert.IsInstanceOf<Identifier>(expressionStatement.Expression);
+        var identifier = (Identifier) expressionStatement.Expression;
+        Assert.That(expressionStatement.TokenLiteral, Is.EqualTo("foobar"));
+        Assert.That(identifier.Value, Is.EqualTo("foobar"));
+    }
+
     private void CheckParserErrors(Parser parser)
     {
         string errors = string.Join(",", parser.Errors);

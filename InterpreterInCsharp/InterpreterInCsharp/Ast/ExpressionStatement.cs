@@ -1,12 +1,7 @@
 namespace InterpreterInCsharp.Ast;
 
-public record ExpressionStatement(Token token, Expression expression) : Statement(token)
+public record ExpressionStatement(Token Token, Expression Expression) : Statement(Token)
 {
-    public string TokenLiteral => token.Literal;
-    public string StatementNode => token.Literal;
-
-    public string String()
-    {
-        return expression != null ? expression.String : "";
-    }
+    public string String => Expression.String;
+    
 }
