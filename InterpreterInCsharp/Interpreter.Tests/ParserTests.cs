@@ -91,6 +91,27 @@ return 839838;";
         Assert.That(identifier.Value, Is.EqualTo("foobar"));
     }
 
+    [Test]
+    public void TestIntegerLiteralExpressions()
+    {
+        var input = @"5;";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        
+        var program = parser.ParseProgram();
+        
+        CheckParserErrors(parser);
+        Assert.NotNull(program);
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = (ExpressionStatement) statement;
+        Assert.IsInstanceOf<IntegerLiteral>(expressionStatement.Expression);
+        var integerLiteral = (IntegerLiteral) expressionStatement.Expression;
+        Assert.That(integerLiteral.Value, Is.EqualTo(5));
+        Assert.That(integerLiteral.TokenLiteral, Is.EqualTo("5"));
+    }
+
     private void CheckParserErrors(Parser parser)
     {
         string errors = string.Join(",", parser.Errors);

@@ -19,6 +19,7 @@ public struct Parser
 
         _prefixParseFunctions = new Dictionary<TokenType, Func<Expression>>();
         RegisterPrefix(TokenType.Ident, ParseIdentifier);
+        RegisterPrefix(TokenType.Int, ParseIntegerLiteral);
     }
 
     public void NextToken()
@@ -107,17 +108,29 @@ public struct Parser
         return new LetStatement(statementToken, name, new Expression(_curToken));
     }
     
+    private Expression ParseIdentifier()
+    {
+        return new Identifier(_curToken, _curToken.Literal);
+    }
+
+    private Expression ParseIntegerLiteral()
+    {
+        var token = _curToken;
+        if (!Int64.TryParse(_curToken.Literal, out Int64 result))
+        {
+            _errors.Add($"Could not parse {_curToken.Literal} as Integer.");
+            return null;
+        }
+
+        return new IntegerLiteral(token, result);
+    }
+
     private void SkipToSemicolon()
     {
         while (!CurrentTokenIs(TokenType.Semicolon))
         {
             NextToken();
         }
-    }
-
-    private Expression ParseIdentifier()
-    {
-        return new Identifier(_curToken, _curToken.Literal);
     }
 
     private bool ExpectPeekTokenType(TokenType type)
