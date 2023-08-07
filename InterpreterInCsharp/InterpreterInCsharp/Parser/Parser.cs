@@ -57,7 +57,6 @@ public struct Parser
     private Statement? ParseExpressionStatement()
     {
         var initialToken = _curToken;
-
         var parsed = ParseExpression(ExpressionPrecedence.LOWEST);
         
         if (_peekToken.Type == TokenType.Semicolon)
@@ -80,9 +79,7 @@ public struct Parser
         var token = _curToken;
         NextToken();
         
-        while(CurrentTokenIs(TokenType.Semicolon)) {
-            NextToken();
-        }
+        SkipToSemicolon();
 
         return new ReturnStatement(token, null);
     }
@@ -92,6 +89,7 @@ public struct Parser
         var statementToken = _curToken;
         if (!ExpectPeekTokenType(TokenType.Ident))
         {
+            SkipToSemicolon();
             return null;
         }
 
@@ -99,15 +97,22 @@ public struct Parser
         
         if (!ExpectPeekTokenType(TokenType.Assign))
         {
+            SkipToSemicolon();
             return null;
         }
 
 
-        while (!CurrentTokenIs(TokenType.Semicolon)) {
-            NextToken();
-        }
+        SkipToSemicolon();
 
         return new LetStatement(statementToken, name, new Expression(_curToken));
+    }
+    
+    private void SkipToSemicolon()
+    {
+        while (!CurrentTokenIs(TokenType.Semicolon))
+        {
+            NextToken();
+        }
     }
 
     private Expression ParseIdentifier()

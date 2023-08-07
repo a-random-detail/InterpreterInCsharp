@@ -52,7 +52,7 @@ let 838383;";
     [Test]
     public void TestReturnStatements()
     {
-        var input = @" return 5;
+        var input = @"return 5;
 return 18;
 return 839838;";
         var lexer = new Lexer(input);
