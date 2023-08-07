@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using InterpreterInCsharp;
 using InterpreterInCsharp.Ast;
 using InterpreterInCsharp.Parser;
+using NuGet.Frameworks;
 
 namespace Interpreter.Tests;
 
@@ -27,7 +29,7 @@ let foobar = 838383;
         {
             "x", "y", "foobar"
         };
-        
+
         foreach (var (statement, expectedIdentifier) in program.Statements.Zip(expectedIdentifiers))
         {
             TestLetStatement(statement, expectedIdentifier);
@@ -57,9 +59,9 @@ return 18;
 return 839838;";
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
-        
+
         var program = parser.ParseProgram();
-        
+
         CheckParserErrors(parser);
         Assert.NotNull(program);
         Assert.That(program.Statements.Count, Is.EqualTo(3));
@@ -69,7 +71,7 @@ return 839838;";
             Assert.That(statement.TokenLiteral, Is.EqualTo("return"));
             Assert.IsInstanceOf<ReturnStatement>(statement);
         }
-        
+
     }
 
     [Test]
@@ -84,9 +86,9 @@ return 839838;";
         Assert.That(program.Statements.Count, Is.EqualTo(1));
         var statement = program.Statements[0];
         Assert.IsInstanceOf<ExpressionStatement>(statement);
-        var expressionStatement = (ExpressionStatement) statement;
+        var expressionStatement = statement as ExpressionStatement;
         Assert.IsInstanceOf<Identifier>(expressionStatement.Expression);
-        var identifier = (Identifier) expressionStatement.Expression;
+        var identifier = (Identifier)expressionStatement.Expression;
         Assert.That(expressionStatement.TokenLiteral, Is.EqualTo("foobar"));
         Assert.That(identifier.Value, Is.EqualTo("foobar"));
     }
@@ -97,20 +99,51 @@ return 839838;";
         var input = @"5;";
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
-        
+
         var program = parser.ParseProgram();
-        
+
         CheckParserErrors(parser);
         Assert.NotNull(program);
         Assert.That(program.Statements.Count, Is.EqualTo(1));
         var statement = program.Statements[0];
         Assert.IsInstanceOf<ExpressionStatement>(statement);
-        var expressionStatement = (ExpressionStatement) statement;
+        var expressionStatement = statement as ExpressionStatement;
         Assert.IsInstanceOf<IntegerLiteral>(expressionStatement.Expression);
-        var integerLiteral = (IntegerLiteral) expressionStatement.Expression;
+        var integerLiteral = expressionStatement.Expression as IntegerLiteral;
         Assert.That(integerLiteral.Value, Is.EqualTo(5));
         Assert.That(integerLiteral.TokenLiteral, Is.EqualTo("5"));
     }
+
+    [TestCase("!5", "!", 5)]
+    [TestCase("-15", "-", 15)]
+    public void TestParsingPrefixExpressions(string input, string op, Int64 value)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        
+        CheckParserErrors(parser);
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStmt = statement as ExpressionStatement;
+        Assert.IsInstanceOf<PrefixExpression>(expressionStmt.Expression);
+        var prefixExpression = expressionStmt.Expression as PrefixExpression;
+        Assert.That(prefixExpression.Operator, Is.EqualTo(op));
+        TestIntegerLiteral(prefixExpression, value);
+
+    }
+
+    private void TestIntegerLiteral(PrefixExpression exp, Int64 expectedValue)
+    {
+        Assert.IsInstanceOf<IntegerLiteral>(exp.Right);
+        var integerLiteral = exp.Right as IntegerLiteral;
+
+        Assert.That(integerLiteral.Value, Is.EqualTo(expectedValue));
+    }
+
 
     private void CheckParserErrors(Parser parser)
     {

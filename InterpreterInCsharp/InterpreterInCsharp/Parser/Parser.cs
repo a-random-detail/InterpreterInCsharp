@@ -20,6 +20,8 @@ public struct Parser
         _prefixParseFunctions = new Dictionary<TokenType, Func<Expression>>();
         RegisterPrefix(TokenType.Ident, ParseIdentifier);
         RegisterPrefix(TokenType.Int, ParseIntegerLiteral);
+        RegisterPrefix(TokenType.Bang, ParsePrefixExpression);
+        RegisterPrefix(TokenType.Minus, ParsePrefixExpression);
     }
 
     public void NextToken()
@@ -69,8 +71,17 @@ public struct Parser
 
     private Expression? ParseExpression(ExpressionPrecedence precedence)
     {
+        if (precedence is ExpressionPrecedence.PREFIX)
+        {
+            Console.WriteLine($"Parsing prefix expression with token {_curToken.Literal} and type {_curToken.Type}");
+            Console.WriteLine($"Does prefix exist? {_prefixParseFunctions[_curToken.Type] != null}");
+        }
         var prefix = _prefixParseFunctions[_curToken.Type];
-        if (prefix == null) return null;
+        if (prefix == null)
+        {
+            NoPrefixParseFnError(_curToken.Type);
+            return null;
+        }
         var leftExpression = prefix();
         return leftExpression;
     }
@@ -115,14 +126,26 @@ public struct Parser
 
     private Expression ParseIntegerLiteral()
     {
-        var token = _curToken;
+        Console.WriteLine($"Parsing {_curToken.Literal} in integer literal parsing function");
         if (!Int64.TryParse(_curToken.Literal, out Int64 result))
         {
             _errors.Add($"Could not parse {_curToken.Literal} as Integer.");
             return null;
         }
 
-        return new IntegerLiteral(token, result);
+        return new IntegerLiteral(_curToken, result);
+    }
+    
+    private Expression ParsePrefixExpression()
+    {
+        var token = _curToken;
+        NextToken();
+        var right = ParseExpression(ExpressionPrecedence.PREFIX);
+        Console.WriteLine($"old current token {token.Literal} -- new current token {_curToken.Literal}");
+        Console.WriteLine($"right -> {right?.String}");
+        return new PrefixExpression(token, token.Literal, right)
+            
+            
     }
 
     private void SkipToSemicolon()
@@ -175,6 +198,11 @@ public struct Parser
     private void RegisterInfix(TokenType type, Func<Expression, Expression?> fn)
     {
         _infixParseFunctions.Add(type, fn);
+    }
+
+    private void NoPrefixParseFnError(TokenType type)
+    {
+        _errors.Add($"No prefix parse function for {type} found.");
     }
 
 }
