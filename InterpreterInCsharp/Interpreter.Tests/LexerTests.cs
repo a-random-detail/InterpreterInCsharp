@@ -28,6 +28,8 @@ if (5 < 10) {
 
 19 == 19;
 19 != 20;
+!9;
+-52;
 ";
         
         var tokens = new List<Token>
@@ -109,6 +111,14 @@ if (5 < 10) {
             new(TokenType.Int, "19"),
             new(TokenType.NotEqual, "!="),
             new(TokenType.Int, "20"),
+            new(TokenType.Semicolon, ";"),
+            
+            new(TokenType.Bang, "!"),
+            new(TokenType.Int, "9"),
+            new(TokenType.Semicolon, ";"),
+            
+            new(TokenType.Minus, "-"),
+            new(TokenType.Int, "52"),
             new(TokenType.Semicolon, ";"),
 
             new(TokenType.Eof, "")
