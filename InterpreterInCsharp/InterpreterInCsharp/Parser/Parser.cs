@@ -2,33 +2,32 @@ using InterpreterInCsharp.Ast;
 
 namespace InterpreterInCsharp.Parser;
 
+using PrefixParseFn = Func<Expression?>;
+
 public struct Parser
 {
     private readonly List<string> _errors = new();
     private readonly Lexer _lexer;
     private Token _curToken;
     private Token _peekToken;
-    private Dictionary<TokenType, Func<Expression>> _prefixParseFunctions;
-    private Dictionary<TokenType, Func<Expression, Expression?>> _infixParseFunctions;
+    private readonly Dictionary<TokenType, PrefixParseFn> _prefixParseFunctions;
+    private readonly Dictionary<TokenType, Func<Expression, Expression?>> _infixParseFunctions;
+    private int _traceLevel = 0;
 
     public Parser(Lexer lexer)
     {
         _lexer = lexer;
-        NextToken();
-        NextToken();
 
-        _prefixParseFunctions = new Dictionary<TokenType, Func<Expression>>();
+        _prefixParseFunctions = new Dictionary<TokenType, PrefixParseFn>();
         RegisterPrefix(TokenType.Ident, ParseIdentifier);
         RegisterPrefix(TokenType.Int, ParseIntegerLiteral);
         RegisterPrefix(TokenType.Bang, ParsePrefixExpression);
         RegisterPrefix(TokenType.Minus, ParsePrefixExpression);
+        
+        NextToken();
+        NextToken();
     }
 
-    public void NextToken()
-    {
-        _curToken = _peekToken;
-        _peekToken = _lexer.NextToken();
-    }
 
     public MonkeyProgram? ParseProgram()
     {
@@ -47,6 +46,54 @@ public struct Parser
         return program;
     }
 
+    private string TraceIndention => new('\t', _traceLevel);
+
+    private void StartTrace(string msg)
+    {
+        Console.WriteLine($"{TraceIndention}{_traceLevel} START {msg}");
+        ++_traceLevel;
+    }
+
+    private void EndTrace(string msg)
+    {
+        Console.WriteLine($"{TraceIndention}{_traceLevel} END {msg}");
+        --_traceLevel;
+    } 
+
+    private void NextToken()
+    {
+        _curToken = _peekToken;
+        _peekToken = _lexer.NextToken();
+    }
+    
+    private bool ExpectPeekTokenType(TokenType type)
+    {
+        if (!PeekTokenIs(type))
+        {
+            PeekError(type);
+            return false;
+        }
+        
+        NextToken();
+        return true;
+    }
+    
+    private void PeekError(TokenType type) =>_errors.Add($"expected next token to be {type}, got {_peekToken.Type} instead");
+    
+    public List<string> Errors => _errors;
+
+    private bool PeekTokenIs(TokenType type) => _peekToken.Type == type;
+
+    private bool CurrentTokenIs(TokenType type) => _curToken.Type == type;
+
+    private void RegisterPrefix(TokenType type, Func<Expression?> fn) =>_prefixParseFunctions.Add(type, fn);
+    
+    
+    private void RegisterInfix(TokenType type, Func<Expression, Expression?> fn) => _infixParseFunctions.Add(type, fn);
+    
+
+    private void NoPrefixParseFnError(TokenType type) =>  _errors.Add($"No prefix parse function for {type} found.");
+    
     private Statement? ParseStatement()
     {
         return _curToken.Type switch
@@ -58,46 +105,53 @@ public struct Parser
     }
 
     private Statement? ParseExpressionStatement()
-    {
+    { 
+        StartTrace(nameof(ParseExpressionStatement));
         var initialToken = _curToken;
-        var parsed = ParseExpression(ExpressionPrecedence.LOWEST);
+        var parsed = ParseExpression(ExpressionPrecedence.Lowest);
+        if (parsed == null) return null;
         
-        if (_peekToken.Type == TokenType.Semicolon)
-        {
+        var result = new ExpressionStatement(initialToken, parsed);
+
+        if (PeekTokenIs(TokenType.Semicolon))
             NextToken();
-        }
-        return new ExpressionStatement(initialToken, parsed);
+        
+        EndTrace(nameof(ParseExpressionStatement));
+        return result;
     }
 
     private Expression? ParseExpression(ExpressionPrecedence precedence)
     {
-        if (precedence is ExpressionPrecedence.PREFIX)
-        {
-            Console.WriteLine($"Parsing prefix expression with token {_curToken.Literal} and type {_curToken.Type}");
-            Console.WriteLine($"Does prefix exist? {_prefixParseFunctions[_curToken.Type] != null}");
-        }
-        var prefix = _prefixParseFunctions[_curToken.Type];
-        if (prefix == null)
+        StartTrace(nameof(ParseExpression));
+        var fetchPrefixSuccess = _prefixParseFunctions.TryGetValue(_curToken.Type, out var prefix);
+        if (!fetchPrefixSuccess)
         {
             NoPrefixParseFnError(_curToken.Type);
             return null;
         }
-        var leftExpression = prefix();
+
+        var leftExpression = prefix!();
+        if (leftExpression == null)
+            return null;
+        
+        EndTrace(nameof(ParseExpression));
         return leftExpression;
     }
 
     private ReturnStatement? ParseReturnStatement()
     {
+        StartTrace(nameof(ParseReturnStatement));
         var token = _curToken;
         NextToken();
         
         SkipToSemicolon();
-
+        EndTrace(nameof(ParseReturnStatement));
         return new ReturnStatement(token, null);
     }
 
     private LetStatement? ParseLetStatement()
     {
+        StartTrace(nameof(ParseLetStatement));
         var statementToken = _curToken;
         if (!ExpectPeekTokenType(TokenType.Ident))
         {
@@ -115,94 +169,43 @@ public struct Parser
 
 
         SkipToSemicolon();
-
+        EndTrace(nameof(ParseLetStatement));
         return new LetStatement(statementToken, name, new Expression(_curToken));
     }
     
-    private Expression ParseIdentifier()
-    {
-        return new Identifier(_curToken, _curToken.Literal);
-    }
+    private Expression ParseIdentifier() =>  new Identifier(_curToken, _curToken.Literal);
 
-    private Expression ParseIntegerLiteral()
+    private Expression? ParseIntegerLiteral()
     {
-        Console.WriteLine($"Parsing {_curToken.Literal} in integer literal parsing function");
+        StartTrace(nameof(ParseIntegerLiteral));
         if (!Int64.TryParse(_curToken.Literal, out Int64 result))
         {
             _errors.Add($"Could not parse {_curToken.Literal} as Integer.");
             return null;
         }
-
+        EndTrace(nameof(ParseIntegerLiteral));
         return new IntegerLiteral(_curToken, result);
     }
     
-    private Expression ParsePrefixExpression()
+    private Expression? ParsePrefixExpression()
     {
+        StartTrace(nameof(ParsePrefixExpression));
         var token = _curToken;
         NextToken();
-        var right = ParseExpression(ExpressionPrecedence.PREFIX);
-        Console.WriteLine($"old current token {token.Literal} -- new current token {_curToken.Literal}");
-        Console.WriteLine($"right -> {right?.String}");
-        return new PrefixExpression(token, token.Literal, right)
-            
-            
+        var right = ParseExpression(ExpressionPrecedence.Prefix);
+        if (right == null) return null;
+        EndTrace(nameof(ParsePrefixExpression));
+        return new PrefixExpression(token, token.Literal, right);
     }
 
     private void SkipToSemicolon()
     {
+        StartTrace(nameof(SkipToSemicolon));
         while (!CurrentTokenIs(TokenType.Semicolon))
         {
             NextToken();
         }
-    }
-
-    private bool ExpectPeekTokenType(TokenType type)
-    {
-        if (!PeekTokenIs(type))
-        {
-            PeekError(type);
-            return false;
-        }
-        
-        NextToken();
-        return true;
-    }
-    
-    private void PeekError(TokenType type)
-    {
-        var msg = $"expected next token to be {type}, got {_peekToken.Type} instead";
-        _errors.Add(msg);
-    }
-    
-    public List<string> Errors => _errors;
-
-    private bool PeekTokenIs(TokenType type) => _peekToken.Type == type;
-
-    private bool CurrentTokenIs(TokenType type) => _curToken.Type == type;
-
-    private Func<Expression> ParsePrefixFunction()
-    {
-        return null;
-    }
-
-    private Func<Expression, Expression?> ParseInfixFunction(Expression ex)
-    {
-        return null;
-    }
-
-    private void RegisterPrefix(TokenType type, Func<Expression> fn)
-    {
-        _prefixParseFunctions.Add(type, fn);
-    }
-    
-    private void RegisterInfix(TokenType type, Func<Expression, Expression?> fn)
-    {
-        _infixParseFunctions.Add(type, fn);
-    }
-
-    private void NoPrefixParseFnError(TokenType type)
-    {
-        _errors.Add($"No prefix parse function for {type} found.");
+        EndTrace(nameof(SkipToSemicolon));
     }
 
 }

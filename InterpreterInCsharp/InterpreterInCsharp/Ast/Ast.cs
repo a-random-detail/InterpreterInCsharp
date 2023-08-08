@@ -6,6 +6,6 @@ public record Node(Token Token)
     public virtual string String => Token.Literal;
 }
 
-public record Statement(Token token) : Node(token);
+public record Statement(Token Token) : Node(Token);
 
-public record Expression(Token token) : Node(token);
+public record Expression(Token Token) : Node(Token);

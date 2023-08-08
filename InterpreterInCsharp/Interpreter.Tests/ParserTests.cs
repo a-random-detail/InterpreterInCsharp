@@ -3,6 +3,7 @@ using InterpreterInCsharp;
 using InterpreterInCsharp.Ast;
 using InterpreterInCsharp.Parser;
 using NuGet.Frameworks;
+using Expression = InterpreterInCsharp.Ast.Expression;
 
 namespace Interpreter.Tests;
 
@@ -108,40 +109,37 @@ return 839838;";
         var statement = program.Statements[0];
         Assert.IsInstanceOf<ExpressionStatement>(statement);
         var expressionStatement = statement as ExpressionStatement;
-        Assert.IsInstanceOf<IntegerLiteral>(expressionStatement.Expression);
-        var integerLiteral = expressionStatement.Expression as IntegerLiteral;
-        Assert.That(integerLiteral.Value, Is.EqualTo(5));
-        Assert.That(integerLiteral.TokenLiteral, Is.EqualTo("5"));
+        TestIntegerLiteral(expressionStatement.Expression, 5);
     }
 
-    [TestCase("!5", "!", 5)]
-    [TestCase("-15", "-", 15)]
+    [TestCase("!5;", "!", 5)]
+    [TestCase("-15;", "-", 15)]
     public void TestParsingPrefixExpressions(string input, string op, Int64 value)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
 
         var program = parser.ParseProgram();
-        
+        Assert.NotNull(program);
         CheckParserErrors(parser);
         
         Assert.That(program.Statements.Count, Is.EqualTo(1));
-        var statement = program.Statements[0];
-        Assert.IsInstanceOf<ExpressionStatement>(statement);
-        var expressionStmt = statement as ExpressionStatement;
-        Assert.IsInstanceOf<PrefixExpression>(expressionStmt.Expression);
-        var prefixExpression = expressionStmt.Expression as PrefixExpression;
-        Assert.That(prefixExpression.Operator, Is.EqualTo(op));
-        TestIntegerLiteral(prefixExpression, value);
+        Assert.IsInstanceOf<ExpressionStatement>(program.Statements[0]);
+        var stmt = program.Statements[0] as ExpressionStatement;
+        Assert.IsInstanceOf<PrefixExpression>(stmt.Expression);
+        var expr = stmt.Expression as PrefixExpression;
+        Assert.That(expr.Operator, Is.EqualTo(op));
+        TestIntegerLiteral(expr.Right, value);
 
     }
 
-    private void TestIntegerLiteral(PrefixExpression exp, Int64 expectedValue)
+    private void TestIntegerLiteral(Expression exp, Int64 expectedValue)
     {
-        Assert.IsInstanceOf<IntegerLiteral>(exp.Right);
-        var integerLiteral = exp.Right as IntegerLiteral;
+        Assert.IsInstanceOf<IntegerLiteral>(exp);
+        var integerLiteral = exp as IntegerLiteral;
 
         Assert.That(integerLiteral.Value, Is.EqualTo(expectedValue));
+        Assert.That(integerLiteral.TokenLiteral, Is.EqualTo(expectedValue.ToString()));
     }
 
 

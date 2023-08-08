@@ -2,10 +2,10 @@ namespace InterpreterInCsharp.Ast;
 
 public enum ExpressionPrecedence
 {
-    LOWEST,
-    EQUALS, // == LESSGREATER // > or <
-    SUM, // +
-    PRODUCT, // *
-    PREFIX, // -X or !X
-    CALL // myFunction(X)
+    Lowest,
+    Comparison, // == LESSGREATER // > or <
+    Sum, // +
+    Product, // *
+    Prefix, // -X or !X
+    Call // myFunction(X)
 }
