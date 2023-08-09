@@ -13,10 +13,12 @@ public class Parser
     private readonly Dictionary<TokenType, PrefixParseFn> _prefixParseFunctions;
     private readonly Dictionary<TokenType, Func<Expression, Expression?>> _infixParseFunctions;
     private int _traceLevel = 0;
+    private bool _traceEnabled;
 
-    public Parser(Lexer lexer)
+    public Parser(Lexer lexer, bool traceEnabled = false)
     {
         _lexer = lexer;
+        _traceEnabled = traceEnabled;
 
         _prefixParseFunctions = new Dictionary<TokenType, PrefixParseFn>();
         RegisterPrefix(TokenType.Ident, ParseIdentifier);
@@ -50,13 +52,15 @@ public class Parser
 
     private void StartTrace(string msg)
     {
-        Console.WriteLine($"{TraceIndention}{_traceLevel} START {msg}");
+        if (_traceEnabled)
+            Console.WriteLine($"{TraceIndention}{_traceLevel} START {msg}");
         ++_traceLevel;
     }
 
     private void EndTrace(string msg)
     {
-        Console.WriteLine($"{TraceIndention}{_traceLevel} END {msg}");
+        if (_traceEnabled)
+            Console.WriteLine($"{TraceIndention}{_traceLevel} END {msg}");
         --_traceLevel;
     } 
 
