@@ -3,6 +3,7 @@ using InterpreterInCsharp.Ast;
 namespace InterpreterInCsharp.Parser;
 
 using PrefixParseFn = Func<Expression?>;
+using InfixParseFn = Func<Expression, Expression?>;
 
 public class Parser
 {
@@ -11,9 +12,22 @@ public class Parser
     private Token _curToken;
     private Token _peekToken;
     private readonly Dictionary<TokenType, PrefixParseFn> _prefixParseFunctions;
-    private readonly Dictionary<TokenType, Func<Expression, Expression?>> _infixParseFunctions;
+    private readonly Dictionary<TokenType, InfixParseFn> _infixParseFunctions;
     private int _traceLevel = 0;
     private bool _traceEnabled;
+
+    private readonly Dictionary<TokenType, ExpressionPrecedence> _precedences =
+        new()
+        {
+            { TokenType.IsEqual, ExpressionPrecedence.Equal },
+            { TokenType.NotEqual, ExpressionPrecedence.Equal },
+            { TokenType.LessThan, ExpressionPrecedence.LessGreater },
+            { TokenType.GreaterThan, ExpressionPrecedence.LessGreater },
+            { TokenType.Plus, ExpressionPrecedence.Sum },
+            { TokenType.Minus, ExpressionPrecedence.Sum },
+            { TokenType.Star, ExpressionPrecedence.Product },
+            { TokenType.Slash, ExpressionPrecedence.Product },
+        };
 
     public Parser(Lexer lexer, bool traceEnabled = false)
     {
@@ -26,10 +40,19 @@ public class Parser
         RegisterPrefix(TokenType.Bang, ParsePrefixExpression);
         RegisterPrefix(TokenType.Minus, ParsePrefixExpression);
         
+        _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
+        RegisterInfix(TokenType.Plus, ParseInfixExpression);
+        RegisterInfix(TokenType.Minus, ParseInfixExpression);
+        RegisterInfix(TokenType.Slash, ParseInfixExpression);
+        RegisterInfix(TokenType.Star, ParseInfixExpression);
+        RegisterInfix(TokenType.IsEqual, ParseInfixExpression);
+        RegisterInfix(TokenType.NotEqual, ParseInfixExpression);
+        RegisterInfix(TokenType.LessThan, ParseInfixExpression);
+        RegisterInfix(TokenType.GreaterThan, ParseInfixExpression);
+        
         NextToken();
         NextToken();
     }
-
 
     public MonkeyProgram? ParseProgram()
     {
@@ -97,7 +120,24 @@ public class Parser
     
 
     private void NoPrefixParseFnError(TokenType type) =>  _errors.Add($"No prefix parse function for {type} found.");
-    
+
+    private ExpressionPrecedence PeekPrecedence()
+    {
+        if (_precedences.TryGetValue(_peekToken.Type, out var precedence))
+            return precedence;
+        return ExpressionPrecedence.Lowest;
+    }
+
+    private ExpressionPrecedence CurrentPrecedence()
+    {
+        if (_precedences.TryGetValue(_curToken.Type, out var precedence))
+        {
+            return precedence;
+        }
+
+        return ExpressionPrecedence.Lowest;
+    }
+
     private Statement? ParseStatement()
     {
         return _curToken.Type switch
@@ -127,8 +167,7 @@ public class Parser
     private Expression? ParseExpression(ExpressionPrecedence precedence)
     {
         StartTrace(nameof(ParseExpression));
-        var fetchPrefixSuccess = _prefixParseFunctions.TryGetValue(_curToken.Type, out var prefix);
-        if (!fetchPrefixSuccess)
+        if (!_prefixParseFunctions.TryGetValue(_curToken.Type, out var prefix))
         {
             NoPrefixParseFnError(_curToken.Type);
             return null;
@@ -137,7 +176,19 @@ public class Parser
         var leftExpression = prefix!();
         if (leftExpression == null)
             return null;
-        
+
+        while (!PeekTokenIs(TokenType.Semicolon) && precedence < PeekPrecedence())
+        {
+            if (!_infixParseFunctions.TryGetValue(_peekToken.Type, out var infix))
+            {
+                EndTrace(nameof(ParseExpression));
+                return leftExpression;
+            }
+
+            NextToken();
+            leftExpression = infix!(leftExpression);
+        }
+
         EndTrace(nameof(ParseExpression));
         return leftExpression;
     }
@@ -195,12 +246,31 @@ public class Parser
     {
         StartTrace(nameof(ParsePrefixExpression));
         var token = _curToken;
+        
         NextToken();
+        
         var right = ParseExpression(ExpressionPrecedence.Prefix);
         if (right == null) return null;
+        
         EndTrace(nameof(ParsePrefixExpression));
         return new PrefixExpression(token, token.Literal, right);
     }
+    
+    private Expression? ParseInfixExpression(Expression left)
+    {
+        StartTrace(nameof(ParseInfixExpression));
+        
+        var initialToken = _curToken;
+        var precedence = CurrentPrecedence();
+        
+        NextToken();
+        
+        var right = ParseExpression(precedence);
+        EndTrace(nameof(ParseInfixExpression));
+        
+        return new InfixExpression(initialToken, left, initialToken.Literal, right);
+    }
+
 
     private void SkipToSemicolon()
     {

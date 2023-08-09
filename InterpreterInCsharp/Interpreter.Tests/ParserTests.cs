@@ -130,6 +130,34 @@ return 839838;";
         var expr = stmt.Expression as PrefixExpression;
         Assert.That(expr.Operator, Is.EqualTo(op));
         TestIntegerLiteral(expr.Right, value);
+    }
+
+    [TestCase("5 + 5;", 5, "+", 5)]
+    [TestCase("5 - 5;", 5, "-", 5)]
+    [TestCase("5 * 5;", 5, "*", 5)]
+    [TestCase("5 / 5;", 5, "/", 5)]
+    [TestCase("5 > 5;", 5, ">", 5)]
+    [TestCase("5 < 5;", 5, "<", 5)]
+    [TestCase("5 == 5;", 5, "==", 5)]
+    [TestCase("5 != 5;", 5, "!=", 5)]
+    public void TestParsingInfixExpressions(string input, Int64 left, string operation, Int64 right)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        Assert.NotNull(program);
+        CheckParserErrors(parser);
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements.First();
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expr = statement as ExpressionStatement;
+        Assert.IsInstanceOf<InfixExpression>(expr.Expression);
+        var infixExpr = expr.Expression as InfixExpression;
+        TestIntegerLiteral(infixExpr.Left, left);
+        TestIntegerLiteral(infixExpr.Right, right);
+        Assert.That(infixExpr.Operator, Is.EqualTo(operation));
 
     }
 
