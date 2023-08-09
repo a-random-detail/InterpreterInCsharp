@@ -4,7 +4,7 @@ namespace InterpreterInCsharp.Parser;
 
 using PrefixParseFn = Func<Expression?>;
 
-public struct Parser
+public class Parser
 {
     private readonly List<string> _errors = new();
     private readonly Lexer _lexer;
@@ -86,7 +86,7 @@ public struct Parser
 
     private bool CurrentTokenIs(TokenType type) => _curToken.Type == type;
 
-    private void RegisterPrefix(TokenType type, Func<Expression?> fn) =>_prefixParseFunctions.Add(type, fn);
+    private void RegisterPrefix(TokenType type, PrefixParseFn fn) =>_prefixParseFunctions.Add(type, fn);
     
     
     private void RegisterInfix(TokenType type, Func<Expression, Expression?> fn) => _infixParseFunctions.Add(type, fn);
