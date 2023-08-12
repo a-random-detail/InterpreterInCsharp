@@ -161,6 +161,32 @@ return 839838;";
 
     }
 
+    [TestCase("-a * b", "((-a) * b)")]
+    [TestCase("!-a", "(!(-a))")]
+    [TestCase("a + b + c", "((a + b) + c)")]
+    [TestCase("a + b - c", "((a + b) - c)")]
+    [TestCase("a * b * c", "((a * b) * c)")]
+    [TestCase("a * b / c", "((a * b) / c)")]
+    [TestCase("a + b / c", "(a + (b / c))")]
+    [TestCase("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)")]
+    [TestCase("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")]
+    [TestCase("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))")]
+    [TestCase("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))")]
+    [TestCase("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))")]
+    public void TestOperatorPrecedenceParsing(string input, string expected)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        CheckParserErrors(parser);
+        
+        Assert.That(program.String, Is.EqualTo(expected));
+    }
+
+
+
+
     private void TestIntegerLiteral(Expression exp, Int64 expectedValue)
     {
         Assert.IsInstanceOf<IntegerLiteral>(exp);
