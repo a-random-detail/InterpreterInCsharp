@@ -3,6 +3,7 @@ using InterpreterInCsharp;
 using InterpreterInCsharp.Ast;
 using InterpreterInCsharp.Parser;
 using NuGet.Frameworks;
+using NUnit.Framework.Internal;
 using Expression = InterpreterInCsharp.Ast.Expression;
 
 namespace Interpreter.Tests;
@@ -88,10 +89,7 @@ return 839838;";
         var statement = program.Statements[0];
         Assert.IsInstanceOf<ExpressionStatement>(statement);
         var expressionStatement = statement as ExpressionStatement;
-        Assert.IsInstanceOf<Identifier>(expressionStatement.Expression);
-        var identifier = (Identifier)expressionStatement.Expression;
-        Assert.That(expressionStatement.TokenLiteral, Is.EqualTo("foobar"));
-        Assert.That(identifier.Value, Is.EqualTo("foobar"));
+        TestIdentifier(expressionStatement.Expression, "foobar");
     }
 
     [Test]
@@ -153,12 +151,7 @@ return 839838;";
         var statement = program.Statements.First();
         Assert.IsInstanceOf<ExpressionStatement>(statement);
         var expr = statement as ExpressionStatement;
-        Assert.IsInstanceOf<InfixExpression>(expr.Expression);
-        var infixExpr = expr.Expression as InfixExpression;
-        TestIntegerLiteral(infixExpr.Left, left);
-        TestIntegerLiteral(infixExpr.Right, right);
-        Assert.That(infixExpr.Operator, Is.EqualTo(operation));
-
+        TestInfixExpression(expr.Expression, left, operation, right);
     }
 
     [TestCase("-a * b", "((-a) * b)")]
@@ -184,7 +177,45 @@ return 839838;";
         Assert.That(program.String, Is.EqualTo(expected));
     }
 
+    private void TestLiteralExpression<T>(Expression exp, T expected)
+    {
+        switch (expected)
+        {
+            case int i:
+                TestIntegerLiteral(exp, i);
+                break;
+            case Int64 i:
+                TestIntegerLiteral(exp, i);
+                break;
+            case string str:
+                TestIdentifier(exp, str);
+                break;
+            default:
+                Assert.Fail($"No pattern matches for expression {exp.String}");
+                break;
+        }
+    }
 
+    private void TestInfixExpression<L, R>(Expression exp, L left, string op, R right)
+    {
+        Assert.IsInstanceOf<InfixExpression>(exp);
+        var infixExp = exp as InfixExpression;
+        
+        TestLiteralExpression(infixExp.Left, left);
+        Assert.That(infixExp.Operator, Is.EqualTo(op));
+        
+        TestLiteralExpression(infixExp.Right, right);
+        
+    }
+
+
+    private void TestIdentifier(Expression exp, string value)
+    {
+        Assert.IsInstanceOf<Identifier>(exp);
+        var ident = exp as Identifier;
+        Assert.That(ident.Value, Is.EqualTo(value));
+        Assert.That(ident.TokenLiteral, Is.EqualTo(value));
+    }
 
 
     private void TestIntegerLiteral(Expression exp, Int64 expectedValue)
@@ -208,7 +239,6 @@ return 839838;";
         Assert.That(statement.TokenLiteral, Is.EqualTo("let"));
         Assert.IsInstanceOf<LetStatement>(statement);
         var letStatement = (LetStatement) statement;
-        Assert.That(letStatement.Identifier.Value, Is.EqualTo(expectedIdentifier));
-        Assert.That(letStatement.Identifier.TokenLiteral, Is.EqualTo(expectedIdentifier));
+        TestIdentifier(letStatement.Identifier, expectedIdentifier);
     }
 }
