@@ -39,6 +39,8 @@ public class Parser
         RegisterPrefix(TokenType.Int, ParseIntegerLiteral);
         RegisterPrefix(TokenType.Bang, ParsePrefixExpression);
         RegisterPrefix(TokenType.Minus, ParsePrefixExpression);
+        RegisterPrefix(TokenType.True, ParseBoolean);
+        RegisterPrefix(TokenType.False, ParseBoolean);
         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
@@ -270,7 +272,8 @@ public class Parser
         
         return new InfixExpression(initialToken, left, initialToken.Literal, right);
     }
-
+    
+    private Expression? ParseBoolean() => new BooleanExpression(_curToken, CurrentTokenIs(TokenType.True));
 
     private void SkipToSemicolon()
     {

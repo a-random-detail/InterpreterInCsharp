@@ -176,6 +176,22 @@ return 839838;";
         
         Assert.That(program.String, Is.EqualTo(expected));
     }
+    
+    [TestCase("true;", true)]
+    [TestCase("false;", false)]
+    public void TestBooleanExpression(string input, bool expected)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+
+        CheckParserErrors(parser);
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        TestBooleanExpression(expressionStatement.Expression, expected);
+    }
 
     private void TestLiteralExpression<T>(Expression exp, T expected)
     {
@@ -207,7 +223,14 @@ return 839838;";
         TestLiteralExpression(infixExp.Right, right);
         
     }
-
+    
+    private void TestBooleanExpression(Expression exp, bool expected)
+    {
+        Assert.IsInstanceOf<BooleanExpression>(exp);
+        var booleanExpression = exp as BooleanExpression;
+        Assert.That(booleanExpression.Value, Is.EqualTo(expected));
+        Assert.That(booleanExpression.TokenLiteral, Is.EqualTo(expected.ToString().ToLower()));
+    }
 
     private void TestIdentifier(Expression exp, string value)
     {
@@ -216,7 +239,6 @@ return 839838;";
         Assert.That(ident.Value, Is.EqualTo(value));
         Assert.That(ident.TokenLiteral, Is.EqualTo(value));
     }
-
 
     private void TestIntegerLiteral(Expression exp, Int64 expectedValue)
     {
