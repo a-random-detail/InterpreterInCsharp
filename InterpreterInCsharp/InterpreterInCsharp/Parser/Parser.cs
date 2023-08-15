@@ -206,9 +206,12 @@ public class Parser
         var token = _curToken;
         NextToken();
         
-        SkipToSemicolon();
+        var returnValue = ParseExpression(ExpressionPrecedence.Lowest);
+        if(PeekTokenIs(TokenType.Semicolon)) 
+            NextToken();
+        
         EndTrace(nameof(ParseReturnStatement));
-        return new ReturnStatement(token, null);
+        return new ReturnStatement(token, returnValue);
     }
 
     private LetStatement? ParseLetStatement()
@@ -229,10 +232,13 @@ public class Parser
             return null;
         }
 
-
-        SkipToSemicolon();
+        NextToken();
+        var value = ParseExpression(ExpressionPrecedence.Lowest);
+        if(PeekTokenIs(TokenType.Semicolon)) 
+            NextToken();
+        
         EndTrace(nameof(ParseLetStatement));
-        return new LetStatement(statementToken, name, new Expression(_curToken));
+        return new LetStatement(statementToken, name, value);
     }
     
     private Expression ParseIdentifier() =>  new Identifier(_curToken, _curToken.Literal);

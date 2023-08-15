@@ -7,32 +7,22 @@ namespace Interpreter.Tests;
 [TestFixture]
 public class ParserTests
 {
-    [Test]
-    public void TestLetStatements()
+    [TestCase("let x = 5;", "x", 5)]
+    [TestCase("let y = true;", "y", true)]
+    [TestCase("let foobar = y;", "foobar", "y")]
+    public void TestLetStatements<T>(string input, string expectedIdentifier, T expectedValue)
     {
-        var input = @"let x = 5;
-let y = 10;
-let foobar = 838383;
-";
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
 
         var program = parser.ParseProgram();
         TestHelpers.CheckParserErrors(parser);
         Assert.NotNull(program);
-        Assert.That(program.Statements.Count, Is.EqualTo(3));
-
-
-        var expectedIdentifiers = new[]
-        {
-            "x", "y", "foobar"
-        };
-
-        foreach (var (statement, expectedIdentifier) in program.Statements.Zip(expectedIdentifiers))
-        {
-            TestHelpers.TestLetStatement(statement, expectedIdentifier);
-        }
-
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        TestHelpers.TestLetStatement(statement, expectedIdentifier);
+        var letStatement = statement as LetStatement;
+        TestHelpers.TestLiteralExpression(letStatement.Value, expectedValue);
     }
 
     [Test]
@@ -49,12 +39,11 @@ let 838383;";
         Assert.That(parser.Errors.Count, Is.EqualTo(3));
     }
 
-    [Test]
-    public void TestReturnStatements()
+    [TestCase("return 5;", 5)]
+    [TestCase("return true;", true)]
+    [TestCase("return foobar;", "foobar")]
+    public void TestReturnStatements<T>(string input, T expectedValue)
     {
-        var input = @"return 5;
-return 18;
-return 839838;";
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
 
@@ -62,14 +51,12 @@ return 839838;";
 
         TestHelpers.CheckParserErrors(parser);
         Assert.NotNull(program);
-        Assert.That(program.Statements.Count, Is.EqualTo(3));
-
-        foreach (var statement in program.Statements)
-        {
-            Assert.That(statement.TokenLiteral, Is.EqualTo("return"));
-            Assert.IsInstanceOf<ReturnStatement>(statement);
-        }
-
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.That(statement.TokenLiteral, Is.EqualTo("return"));
+        Assert.IsInstanceOf<ReturnStatement>(statement);
+        var returnStatement = statement as ReturnStatement;
+        TestHelpers.TestLiteralExpression(returnStatement.Value, expectedValue);
     }
 
     [Test]
