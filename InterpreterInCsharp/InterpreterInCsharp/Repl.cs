@@ -19,13 +19,25 @@ public class Repl
             }
             
             var lexer = new Lexer(nextLine);
-            
-            do
+            var parser = new Parser.Parser(lexer);
+            var program = parser.ParseProgram();
+            if (parser.Errors.Count != 0)
             {
-                nextToken = lexer.NextToken();
-                Console.WriteLine(nextToken);
-            } while (nextToken.Type != TokenType.Eof);
+                PrintParserErrors(parser.Errors);
+                continue;
+            }
+            
+            Console.WriteLine(program.String);
+            Console.Write(Prompt);
         } 
     }
-    
+
+    private static void PrintParserErrors(List<string> errors)
+    {
+        Console.WriteLine(" parser errors:");
+        foreach (var error in errors)
+        {
+            Console.WriteLine($"\t{error}");
+        }
+    }
 }
