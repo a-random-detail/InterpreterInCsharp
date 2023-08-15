@@ -41,6 +41,8 @@ public class Parser
         RegisterPrefix(TokenType.Minus, ParsePrefixExpression);
         RegisterPrefix(TokenType.True, ParseBoolean);
         RegisterPrefix(TokenType.False, ParseBoolean);
+        RegisterPrefix(TokenType.Lparen, ParseGroupedExpression);
+        RegisterPrefix(TokenType.If, ParseIfExpression);
         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
@@ -273,6 +275,57 @@ public class Parser
         return new InfixExpression(initialToken, left, initialToken.Literal, right);
     }
     
+    private Expression? ParseGroupedExpression()
+    {
+        NextToken();
+        var exp = ParseExpression(ExpressionPrecedence.Lowest);
+        if (!ExpectPeekTokenType(TokenType.Rparen))
+            return null;
+        
+        return exp;
+    }
+    
+    private IfExpression? ParseIfExpression()
+    {
+        var initialToken = _curToken;
+        if (!ExpectPeekTokenType(TokenType.Lparen))
+            return null;
+        NextToken();
+        var condition = ParseExpression(ExpressionPrecedence.Lowest);
+        if (!ExpectPeekTokenType(TokenType.Rparen))
+            return null;
+        if (!ExpectPeekTokenType(TokenType.Lbrace))
+            return null;
+
+        var consequence = ParseBlockStatement();
+        if (PeekTokenIs(TokenType.Else))
+        {
+            NextToken();
+            if (!ExpectPeekTokenType(TokenType.Lbrace))
+                return null;
+            var alternative = ParseBlockStatement();
+            return new IfExpression(initialToken, condition, consequence, alternative);
+        }
+        
+        return new IfExpression(initialToken, condition, consequence, null);
+    }
+
+    private BlockStatement ParseBlockStatement()
+    {
+        var initialToken = _curToken;
+        var statements = new List<Statement>();
+        NextToken();
+        while (!CurrentTokenIs(TokenType.Rbrace))
+        {
+            var statement = ParseStatement();
+            if (statement != null)
+                statements.Add(statement);
+            NextToken();
+        }
+
+        return new BlockStatement(initialToken, statements.ToArray());
+    }
+
     private Expression? ParseBoolean() => new BooleanExpression(_curToken, CurrentTokenIs(TokenType.True));
 
     private void SkipToSemicolon()

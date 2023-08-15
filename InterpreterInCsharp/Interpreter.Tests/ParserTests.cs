@@ -167,6 +167,11 @@ return 839838;";
     [TestCase("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))")]
     [TestCase("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))")]
     [TestCase("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))")]
+    [TestCase("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)")]
+    [TestCase("(5 + 5) * 2", "((5 + 5) * 2)")]
+    [TestCase("2 / (5 + 5)", "(2 / (5 + 5))")]
+    [TestCase("-(5 + 5)", "(-(5 + 5))")]
+    [TestCase("!(true == true)", "(!(true == true))")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -206,6 +211,56 @@ return 839838;";
 
         TestHelpers.CheckParserErrors(parser);
         Assert.That(program.String, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void TestIfExpression()
+    {
+        var input = "if (x < y) { x }";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<IfExpression>(expressionStatement.Expression);
+        var ifExpression = expressionStatement.Expression as IfExpression;
+        TestHelpers.TestInfixExpression(ifExpression.Condition, "x", "<", "y");
+        Assert.That(ifExpression.Consequence.Statements.Count, Is.EqualTo(1));
+        var consequence = ifExpression.Consequence.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(consequence);
+        var consequenceExpression = consequence as ExpressionStatement;
+        TestHelpers.TestIdentifier(consequenceExpression.Expression, "x");
+        Assert.IsNull(ifExpression.Alternative);
+    }
+    
+    [Test]
+    public void TestIfElseExpression()
+    {
+        var input = "if (x < y) { x } else { y }";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<IfExpression>(expressionStatement.Expression);
+        var ifExpression = expressionStatement.Expression as IfExpression;
+        TestHelpers.TestInfixExpression(ifExpression.Condition, "x", "<", "y");
+        Assert.That(ifExpression.Consequence.Statements.Count, Is.EqualTo(1));
+        var consequence = ifExpression.Consequence.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(consequence);
+        var consequenceExpression = consequence as ExpressionStatement;
+        TestHelpers.TestIdentifier(consequenceExpression.Expression, "x");
+        Assert.That(ifExpression.Alternative.Statements.Count, Is.EqualTo(1));
+        var alternative = ifExpression.Alternative.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(alternative);
+        var alternativeExpression = alternative as ExpressionStatement;
+        TestHelpers.TestIdentifier(alternativeExpression.Expression, "y");
     }
 
 }
