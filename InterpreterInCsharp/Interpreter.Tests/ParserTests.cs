@@ -172,6 +172,9 @@ return 839838;";
     [TestCase("2 / (5 + 5)", "(2 / (5 + 5))")]
     [TestCase("-(5 + 5)", "(-(5 + 5))")]
     [TestCase("!(true == true)", "(!(true == true))")]
+    [TestCase("a + add(b * c) + d", "((a + add((b * c))) + d)")]
+    [TestCase("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")]
+    [TestCase("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -307,6 +310,27 @@ return 839838;";
         {
             TestHelpers.TestLiteralExpression(functionLiteral.Parameters[i], expectedParams[i]);
         }
+    }
+
+    [Test]
+    public void TestCallExpressionParsing()
+    {
+        var input = "add(1, 2 * 3, 4 + 5);";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<CallExpression>(expressionStatement.Expression);
+        var callExpression = expressionStatement.Expression as CallExpression;
+        TestHelpers.TestIdentifier(callExpression.Function, "add");
+        Assert.That(callExpression.Arguments.Count, Is.EqualTo(3));
+        TestHelpers.TestLiteralExpression(callExpression.Arguments[0], 1);
+        TestHelpers.TestInfixExpression(callExpression.Arguments[1], 2, "*", 3);
+        TestHelpers.TestInfixExpression(callExpression.Arguments[2], 4, "+", 5);
     }
 
 }

@@ -27,6 +27,7 @@ public class Parser
             { TokenType.Minus, ExpressionPrecedence.Sum },
             { TokenType.Star, ExpressionPrecedence.Product },
             { TokenType.Slash, ExpressionPrecedence.Product },
+            {TokenType.Lparen, ExpressionPrecedence.Call}
         };
 
     public Parser(Lexer lexer, bool traceEnabled = false)
@@ -54,6 +55,7 @@ public class Parser
         RegisterInfix(TokenType.NotEqual, ParseInfixExpression);
         RegisterInfix(TokenType.LessThan, ParseInfixExpression);
         RegisterInfix(TokenType.GreaterThan, ParseInfixExpression);
+        RegisterInfix(TokenType.Lparen, ParseCallExpression);
         
         NextToken();
         NextToken();
@@ -362,6 +364,37 @@ public class Parser
             return null;
         
         return identifiers.ToArray();
+    }
+    
+    private Expression? ParseCallExpression(Expression arg)
+    {
+        var initialToken = _curToken;
+        var arguments = ParseCallArguments();
+        return new CallExpression(initialToken, arg, arguments);
+    }
+
+    private Expression[] ParseCallArguments()
+    {
+        var args = new List<Expression>();
+        if (PeekTokenIs(TokenType.Rparen))
+        {
+            NextToken();
+            return args.ToArray();
+        }
+        NextToken();
+        args.Add(ParseExpression(ExpressionPrecedence.Lowest));
+        
+        while (PeekTokenIs(TokenType.Comma))
+        {
+            NextToken();
+            NextToken();
+            args.Add(ParseExpression(ExpressionPrecedence.Lowest));
+        }
+        
+        if (!ExpectPeekTokenType(TokenType.Rparen))
+            return null;
+        
+        return args.ToArray();
     }
 
     private Expression? ParseBoolean() => new BooleanExpression(_curToken, CurrentTokenIs(TokenType.True));
