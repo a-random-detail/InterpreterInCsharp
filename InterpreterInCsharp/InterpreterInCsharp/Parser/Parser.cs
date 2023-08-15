@@ -43,6 +43,7 @@ public class Parser
         RegisterPrefix(TokenType.False, ParseBoolean);
         RegisterPrefix(TokenType.Lparen, ParseGroupedExpression);
         RegisterPrefix(TokenType.If, ParseIfExpression);
+        RegisterPrefix(TokenType.Function, ParseFunctionLiteral);
         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
@@ -324,6 +325,43 @@ public class Parser
         }
 
         return new BlockStatement(initialToken, statements.ToArray());
+    }
+    
+    private FunctionLiteral? ParseFunctionLiteral()
+    {
+        var initialToken = _curToken;
+        if (!ExpectPeekTokenType(TokenType.Lparen))
+            return null;
+        var parameters = ParseFunctionParameters();
+        if (!ExpectPeekTokenType(TokenType.Lbrace))
+            return null;
+        var body = ParseBlockStatement();
+        return new FunctionLiteral(initialToken, parameters, body);
+    }
+
+    private Identifier[] ParseFunctionParameters()
+    {
+        var identifiers = new List<Identifier>();
+        
+        if (PeekTokenIs(TokenType.Rparen))
+        {
+            NextToken();
+            return identifiers.ToArray();
+        }
+        NextToken();
+        identifiers.Add(new Identifier(_curToken, _curToken.Literal));
+        
+        while (PeekTokenIs(TokenType.Comma))
+        {
+            NextToken();
+            NextToken();
+            identifiers.Add(new Identifier(_curToken, _curToken.Literal));
+        }
+        
+        if (!ExpectPeekTokenType(TokenType.Rparen))
+            return null;
+        
+        return identifiers.ToArray();
     }
 
     private Expression? ParseBoolean() => new BooleanExpression(_curToken, CurrentTokenIs(TokenType.True));

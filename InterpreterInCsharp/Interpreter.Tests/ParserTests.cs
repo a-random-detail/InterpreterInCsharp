@@ -263,4 +263,50 @@ return 839838;";
         TestHelpers.TestIdentifier(alternativeExpression.Expression, "y");
     }
 
+    [Test]
+    public void TestFunctionLiteralParsing()
+    {
+        var input = "fn(x, y) { x + y; }";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<FunctionLiteral>(expressionStatement.Expression);
+        var functionLiteral = expressionStatement.Expression as FunctionLiteral;
+        Assert.That(functionLiteral.Parameters.Count, Is.EqualTo(2));
+        TestHelpers.TestLiteralExpression(functionLiteral.Parameters[0], "x");
+        TestHelpers.TestLiteralExpression(functionLiteral.Parameters[1], "y");
+        Assert.That(functionLiteral.Body.Statements.Count, Is.EqualTo(1));
+        var bodyStatement = functionLiteral.Body.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(bodyStatement);
+        var bodyExpressionStatement = bodyStatement as ExpressionStatement;
+        TestHelpers.TestInfixExpression(bodyExpressionStatement.Expression, "x", "+", "y");
+    }
+    
+    [TestCase("fn() {};", new string[] {})]
+    [TestCase("fn(x) {};", new string[] {"x"})]
+    [TestCase("fn(x, y, z) {};", new string[] {"x", "y", "z"})]
+    public void TestFunctionParameterParsing(string input, string[] expectedParams)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<FunctionLiteral>(expressionStatement.Expression);
+        var functionLiteral = expressionStatement.Expression as FunctionLiteral;
+        Assert.That(functionLiteral.Parameters.Count, Is.EqualTo(expectedParams.Length));
+        for (var i = 0; i < expectedParams.Length; i++)
+        {
+            TestHelpers.TestLiteralExpression(functionLiteral.Parameters[i], expectedParams[i]);
+        }
+    }
+
 }
