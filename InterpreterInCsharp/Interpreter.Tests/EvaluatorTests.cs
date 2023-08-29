@@ -3,7 +3,6 @@ using InterpreterInCsharp.Ast;
 using InterpreterInCsharp.Evaluator;
 using InterpreterInCsharp.Object;
 using InterpreterInCsharp.Parser;
-using Object = InterpreterInCsharp.Object.Object;
 
 namespace Interpreter.Tests;
 
@@ -17,8 +16,23 @@ public class EvaluatorTests
         var evaluated = TestEval(input);
         TestIntegerObject(evaluated, expectedValue);
     }
+    
+    [TestCase("true", true)]
+    [TestCase("false", false)]
+    public void TestEvalBooleanExpression(string input, bool expectedValue)
+    {
+        var evaluated = TestEval(input);
+        TestBooleanObject(evaluated, expectedValue);
+    }
 
-    private Object TestEval(string input)
+    private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
+    {
+        Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
+        var boolean = evaluated as MonkeyBoolean;
+        Assert.That(boolean.Value, Is.EqualTo(expectedValue));
+    }
+
+    private MonkeyObject TestEval(string input)
     {
         Lexer lexer = new(input);
         Parser parser = new(lexer);
@@ -26,10 +40,10 @@ public class EvaluatorTests
         return Evaluator.Eval(program);
     }
 
-    private void TestIntegerObject(Object obj, Int64 expected)
+    private void TestIntegerObject(MonkeyObject obj, Int64 expected)
     {
-        Assert.IsInstanceOf<Integer>(obj);
-        var integer = obj as Integer;
+        Assert.IsInstanceOf<MonkeyInteger>(obj);
+        var integer = obj as MonkeyInteger;
         Assert.That(integer.Value, Is.EqualTo(expected));
     }
 }
