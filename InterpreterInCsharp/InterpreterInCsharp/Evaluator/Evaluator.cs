@@ -6,18 +6,26 @@ namespace InterpreterInCsharp.Evaluator;
 
 public class Evaluator
 {
-    public static Object.MonkeyObject Eval(Ast.Node node) => node switch
+    
+    private static MonkeyBoolean True = new(true);
+    private static MonkeyBoolean False = new(false);
+    public static MonkeyObject Eval(Ast.Node node) => node switch
     {
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
-        BooleanExpression booleanExpression => new MonkeyBoolean(booleanExpression.Value),
+        BooleanExpression booleanExpression => NativeBoolToBoolean(booleanExpression.Value),
         MonkeyProgram program => EvalStatements(program.Statements),
         ExpressionStatement expr => Eval(expr.Expression),
         _ => throw new ArgumentOutOfRangeException(nameof(node))
     };
 
-    private static Object.MonkeyObject EvalStatements(List<Statement> stmts)
+    private static MonkeyObject NativeBoolToBoolean(bool value)
     {
-        Object.MonkeyObject result = null;
+        return value ? True : False;
+    }   
+
+    private static MonkeyObject EvalStatements(List<Statement> stmts)
+    {
+        MonkeyObject result = null;
         foreach (var stmt in stmts)
         {
             result = Eval(stmt);
