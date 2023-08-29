@@ -1,5 +1,3 @@
-using System;
-
 namespace InterpreterInCsharp;
 
 public class Repl
@@ -26,9 +24,12 @@ public class Repl
                 PrintParserErrors(parser.Errors);
                 continue;
             }
-            
-            Console.WriteLine(program.String);
-            Console.Write(Prompt);
+
+            var evaluated = Evaluator.Evaluator.Eval(program);
+            if (evaluated != null)
+            {
+                Console.WriteLine(evaluated.Inspect());
+            }
         } 
     }
 
