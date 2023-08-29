@@ -24,6 +24,13 @@ public class EvaluatorTests
         var evaluated = TestEval(input);
         TestBooleanObject(evaluated, expectedValue);
     }
+    
+    [Test]
+    public void TestNullObject()
+    {
+        var evaluated = TestEval("null");
+        Assert.IsInstanceOf<MonkeyNull>(evaluated);
+    }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
