@@ -12,6 +12,7 @@ public class Evaluator
     private static readonly MonkeyNull Null = new();
     public static MonkeyObject Eval(Ast.Node node) => node switch
     {
+        InfixExpression infixExpression => EvalInfixExpression(infixExpression),
         PrefixExpression prefixExpression => EvalPrefixExpression(prefixExpression),
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
         BooleanExpression booleanExpression => NativeBoolToBoolean(booleanExpression.Value),
@@ -20,18 +21,48 @@ public class Evaluator
         _ => Null
     };
 
+    private static MonkeyObject EvalInfixExpression(InfixExpression expr)
+    {
+        var left = Eval(expr.Left);
+        var right = Eval(expr.Right);
+
+        if (left.Type != ObjectType.Integer || right.Type != ObjectType.Integer)
+        {
+            return Null;
+        }
+
+        return EvalIntegerInfixExpression(expr.Operator, left, right);
+    }
+
+    private static MonkeyObject EvalIntegerInfixExpression(string exprOperator, MonkeyObject left, MonkeyObject right)
+    {
+        MonkeyInteger? l = left as MonkeyInteger;
+        MonkeyInteger? r = right as MonkeyInteger;
+
+        if (l == null || r == null)
+        {
+            return Null;
+        }
+
+        return exprOperator switch
+        {
+            "*" => new MonkeyInteger(l.Value * r.Value),
+            "/" => new MonkeyInteger(l.Value / r.Value),
+            "+" => new MonkeyInteger(l.Value + r.Value),
+            "-" => new MonkeyInteger(l.Value - r.Value),
+            _ => Null
+        };
+    }
+
     private static MonkeyObject EvalPrefixExpression(PrefixExpression expr)
     {
         var right = Eval(expr.Right);
-        switch (expr.Operator)
+        return expr.Operator switch
         {
-            case "-":
-                return EvalMinusPrefixOperator(right);
-            case "!":
-                return EvalBangOperatorExpression(right);
-            default:
-                return Null;
-        }
+            "-" => EvalMinusPrefixOperator(right),
+            "!" => EvalBangOperatorExpression(right),
+            _ => Null
+        };
     }
 
     private static MonkeyObject EvalMinusPrefixOperator(MonkeyObject right)
