@@ -35,6 +35,18 @@ public class EvaluatorTests
     
     [TestCase("true", true)]
     [TestCase("false", false)]
+    [TestCase("1 < 2", true)]
+    [TestCase("1 > 2", false)]
+    [TestCase("1 < 1", false)]
+    [TestCase("1 > 1", false)]
+    [TestCase("1 == 1", true)]
+    [TestCase("1 != 1", false)]
+    [TestCase("1 == 2", false)]
+    [TestCase("1 != 2", true)]
+    [TestCase("(1 < 2) == true", true)]
+    [TestCase("(1 < 2) == false", false)]
+    [TestCase("(1 > 2) == true", false)]
+    [TestCase("(1 > 2) == false", true)]
     public void TestEvalBooleanExpression(string input, bool expectedValue)
     {
         var evaluated = TestEval(input);

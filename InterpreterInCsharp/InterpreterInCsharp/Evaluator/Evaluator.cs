@@ -26,12 +26,17 @@ public class Evaluator
         var left = Eval(expr.Left);
         var right = Eval(expr.Right);
 
-        if (left.Type != ObjectType.Integer || right.Type != ObjectType.Integer)
+        if (left.Type == ObjectType.Integer && right.Type == ObjectType.Integer)
         {
-            return Null;
+            return EvalIntegerInfixExpression(expr.Operator, left, right);
         }
 
-        return EvalIntegerInfixExpression(expr.Operator, left, right);
+        return expr.Operator switch
+        {
+            "==" => NativeBoolToBoolean(left == right),
+            "!=" => NativeBoolToBoolean(left != right),
+            _ => Null,
+        };
     }
 
     private static MonkeyObject EvalIntegerInfixExpression(string exprOperator, MonkeyObject left, MonkeyObject right)
@@ -50,6 +55,10 @@ public class Evaluator
             "/" => new MonkeyInteger(l.Value / r.Value),
             "+" => new MonkeyInteger(l.Value + r.Value),
             "-" => new MonkeyInteger(l.Value - r.Value),
+            "<" => NativeBoolToBoolean(l.Value < r.Value),
+            ">" => NativeBoolToBoolean(l.Value > r.Value),
+            "==" => NativeBoolToBoolean(l.Value == r.Value),
+            "!=" => NativeBoolToBoolean(l.Value != r.Value),
             _ => Null
         };
     }
