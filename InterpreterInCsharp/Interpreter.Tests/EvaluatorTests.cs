@@ -11,6 +11,10 @@ public class EvaluatorTests
 {
     [TestCase("5", 5)]
     [TestCase("123", 123)]
+    [TestCase("5", 5)]
+    [TestCase("10", 10)]
+    [TestCase("-5", -5)]
+    [TestCase("-10", -10)]
     public void TestEvalIntegerExpression(string input, Int64 expectedValue)
     {
         var evaluated = TestEval(input);
@@ -30,6 +34,18 @@ public class EvaluatorTests
     {
         var evaluated = TestEval("null");
         Assert.IsInstanceOf<MonkeyNull>(evaluated);
+    }
+
+    [TestCase("!true", false)]
+    [TestCase("!false", true)]
+    [TestCase("!5", false)]
+    [TestCase("!!true", true)]
+    [TestCase("!!false", false)]
+    [TestCase("!!5", true)]
+    public void TestBangOperator(string input, bool expected)
+    {
+        var evaluated = TestEval(input);
+        TestBooleanObject(evaluated, expected);
     }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
