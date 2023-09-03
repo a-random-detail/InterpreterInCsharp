@@ -1,6 +1,6 @@
-using System.Runtime.InteropServices.JavaScript;
 using InterpreterInCsharp.Ast;
 using InterpreterInCsharp.Object;
+using System.Collections.Generic;
 
 namespace InterpreterInCsharp.Evaluator;
 
@@ -12,6 +12,8 @@ public class Evaluator
     private static readonly MonkeyNull Null = new();
     public static MonkeyObject Eval(Ast.Node node) => node switch
     {
+        BlockStatement blockStatement => EvalStatements(blockStatement.Statements.ToList()),
+        IfExpression ifExpression => EvalIfExpression(ifExpression),
         InfixExpression infixExpression => EvalInfixExpression(infixExpression),
         PrefixExpression prefixExpression => EvalPrefixExpression(prefixExpression),
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
@@ -20,6 +22,33 @@ public class Evaluator
         ExpressionStatement expr => Eval(expr.Expression),
         _ => Null
     };
+
+    private static MonkeyObject EvalIfExpression(IfExpression expr){
+        var condition = Eval(expr.Condition);
+
+        if (IsTruthy(condition))
+        {
+            return Eval(expr.Consequence);
+        }
+        else if (expr.Alternative != null)
+        {
+            return Eval(expr.Alternative);
+        }
+        else
+        {
+            return Null;
+        }
+    }
+
+    private static bool IsTruthy(MonkeyObject obj)
+    {
+        return obj switch
+        {
+            MonkeyBoolean boolean => boolean.Value ? true : false,
+            MonkeyNull _ => false,  
+            _ => true 
+        };
+    }
 
     private static MonkeyObject EvalInfixExpression(InfixExpression expr)
     {
