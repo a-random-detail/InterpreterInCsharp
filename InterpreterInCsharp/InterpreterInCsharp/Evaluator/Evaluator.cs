@@ -9,6 +9,7 @@ public class Evaluator
     private static readonly MonkeyBoolean True = new(true);
     private static readonly MonkeyBoolean False = new(false);
     private static readonly MonkeyNull Null = new();
+
     public static MonkeyObject Eval(Ast.Node node) => node switch
     {
         BlockStatement blockStatement => EvalStatements(blockStatement.Statements.ToList()),
