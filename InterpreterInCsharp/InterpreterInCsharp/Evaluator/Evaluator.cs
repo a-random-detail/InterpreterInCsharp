@@ -1,6 +1,5 @@
 using InterpreterInCsharp.Ast;
 using InterpreterInCsharp.Object;
-using System.Collections.Generic;
 
 namespace InterpreterInCsharp.Evaluator;
 
