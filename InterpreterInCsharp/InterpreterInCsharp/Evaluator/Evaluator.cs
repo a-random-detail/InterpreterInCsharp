@@ -13,16 +13,51 @@ public class Evaluator
     public static MonkeyObject Eval(Ast.Node node) => node switch
     {
         MonkeyProgram program => EvalProgram(program),
-        ReturnStatement returnStatement => new MonkeyReturnValue(Eval(returnStatement.Value)),
+        ReturnStatement returnStatement => HandleReturnStatement(returnStatement), 
         BlockStatement blockStatement => EvalBlockStatement(blockStatement.Statements.ToList()),
         IfExpression ifExpression => EvalIfExpression(ifExpression),
-        InfixExpression infixExpression => EvalInfixExpression(infixExpression),
-        PrefixExpression prefixExpression => EvalPrefixExpression(prefixExpression),
+        InfixExpression infixExpression => HandleInfixExpression(infixExpression), 
+        PrefixExpression prefixExpression => HandlePrefixExpression(prefixExpression), 
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
         BooleanExpression booleanExpression => NativeBoolToBoolean(booleanExpression.Value),
         ExpressionStatement expr => Eval(expr.Expression),
         _ => Null
     };
+
+    private static MonkeyObject HandleInfixExpression(InfixExpression expr) {
+        var left = Eval(expr.Left);
+        if (IsError(left))
+        {
+            return left;
+        }
+        var right = Eval(expr.Right);
+        if (IsError(right))
+        {
+            return right;
+        }
+
+        return EvalInfixExpression(expr);
+    }
+
+    private static MonkeyObject HandlePrefixExpression(PrefixExpression expr) {
+        var right = Eval(expr.Right);
+        if (IsError(right))
+        {
+            return right;
+        }
+        
+        return EvalPrefixExpression(expr);
+    }
+    
+    private static MonkeyObject HandleReturnStatement(ReturnStatement stmt)
+    {
+        var val = Eval(stmt.Value);
+        if (val.Type == ObjectType.Error)
+        {
+            return val;
+        }
+        return new MonkeyReturnValue(val);
+    }
 
     private static MonkeyObject NewError(string format, params string[] args)
     {
@@ -48,6 +83,10 @@ public class Evaluator
 
     private static MonkeyObject EvalIfExpression(IfExpression expr){
         var condition = Eval(expr.Condition);
+        if (IsError(condition))
+        {
+            return condition;
+        }
 
         if (IsTruthy(condition))
         {
@@ -61,6 +100,11 @@ public class Evaluator
         {
             return Null;
         }
+    }
+
+    private static bool IsError(MonkeyObject obj)
+    {
+        return obj != null && obj.Type == ObjectType.Error;
     }
 
     private static bool IsTruthy(MonkeyObject obj)
