@@ -5,6 +5,7 @@ public enum ObjectType
     Integer,
     Boolean,
     Null,
+    ReturnValue
 }
 public interface MonkeyObject
 {
@@ -28,5 +29,11 @@ public record MonkeyNull : MonkeyObject
 {
     public ObjectType Type => ObjectType.Null;
     public string Inspect() => "null";
+}
+
+public record MonkeyReturnValue(MonkeyObject Value) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.ReturnValue;
+    public string Inspect() => Value.Inspect();
 }
 

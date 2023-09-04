@@ -87,6 +87,15 @@ public class EvaluatorTests
             TestIntegerObject(evaluated, (Int64)expected);
     }
 
+    [TestCase("return 10;", 10)]
+    [TestCase("return 10; 9;", 10)]
+    [TestCase("return 2 * 5; 9;", 10)]
+    [TestCase("9; return 2 * 5; 9;", 10)]
+    public void TestReturnStatements(string input, Int64 expected) {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);

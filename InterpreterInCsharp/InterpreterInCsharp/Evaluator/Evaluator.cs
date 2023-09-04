@@ -12,6 +12,7 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node) => node switch
     {
+        ReturnStatement returnStatement => new MonkeyReturnValue(Eval(returnStatement.Value)),
         BlockStatement blockStatement => EvalStatements(blockStatement.Statements.ToList()),
         IfExpression ifExpression => EvalIfExpression(ifExpression),
         InfixExpression infixExpression => EvalInfixExpression(infixExpression),
@@ -136,6 +137,10 @@ public class Evaluator
         foreach (var stmt in stmts)
         {
             result = Eval(stmt);
+            if (result.Type == ObjectType.ReturnValue)
+            {
+                return (result as MonkeyReturnValue)!.Value;
+            }
         }
 
         return result;
