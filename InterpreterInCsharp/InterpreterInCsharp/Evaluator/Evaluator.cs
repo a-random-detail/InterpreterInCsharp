@@ -12,17 +12,32 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node) => node switch
     {
+        MonkeyProgram program => EvalProgram(program),
         ReturnStatement returnStatement => new MonkeyReturnValue(Eval(returnStatement.Value)),
-        BlockStatement blockStatement => EvalStatements(blockStatement.Statements.ToList()),
+        BlockStatement blockStatement => EvalBlockStatement(blockStatement.Statements.ToList()),
         IfExpression ifExpression => EvalIfExpression(ifExpression),
         InfixExpression infixExpression => EvalInfixExpression(infixExpression),
         PrefixExpression prefixExpression => EvalPrefixExpression(prefixExpression),
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
         BooleanExpression booleanExpression => NativeBoolToBoolean(booleanExpression.Value),
-        MonkeyProgram program => EvalStatements(program.Statements),
         ExpressionStatement expr => Eval(expr.Expression),
         _ => Null
     };
+
+    private static MonkeyObject EvalBlockStatement(List<Statement> statements)
+    {
+        MonkeyObject result = null;
+        foreach (var stmt in statements)
+        {
+            result = Eval(stmt);
+            if (result != null && result.Type == ObjectType.ReturnValue)
+            {
+                return result;
+            }
+        }
+
+        return result;
+    }
 
     private static MonkeyObject EvalIfExpression(IfExpression expr){
         var condition = Eval(expr.Condition);
@@ -131,10 +146,10 @@ public class Evaluator
         return value ? True : False;
     }   
 
-    private static MonkeyObject EvalStatements(List<Statement> stmts)
+    private static MonkeyObject EvalProgram(MonkeyProgram program)
     {
         MonkeyObject result = null;
-        foreach (var stmt in stmts)
+        foreach (var stmt in program.Statements)
         {
             result = Eval(stmt);
             if (result.Type == ObjectType.ReturnValue)
