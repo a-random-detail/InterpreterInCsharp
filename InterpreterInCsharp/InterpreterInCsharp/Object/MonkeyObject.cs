@@ -5,7 +5,8 @@ public enum ObjectType
     Integer,
     Boolean,
     Null,
-    ReturnValue
+    ReturnValue,
+    Error
 }
 public interface MonkeyObject
 {
@@ -35,5 +36,11 @@ public record MonkeyReturnValue(MonkeyObject Value) : MonkeyObject
 {
     public ObjectType Type => ObjectType.ReturnValue;
     public string Inspect() => Value.Inspect();
+}
+
+public record MonkeyError(string Message) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Error;
+    public string Inspect() => $"ERROR: {Message}";
 }
 

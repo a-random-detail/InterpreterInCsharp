@@ -24,15 +24,22 @@ public class Evaluator
         _ => Null
     };
 
+    private static MonkeyObject NewError(string format, params string[] args)
+    {
+        return new MonkeyError(string.Format(format, args));
+    }
+
     private static MonkeyObject EvalBlockStatement(List<Statement> statements)
     {
-        MonkeyObject result = null;
+        MonkeyObject result = Null;
         foreach (var stmt in statements)
         {
             result = Eval(stmt);
-            if (result != null && result.Type == ObjectType.ReturnValue)
-            {
-                return result;
+            if (result != null) {
+                if (result.Type == ObjectType.ReturnValue || result.Type == ObjectType.Error)
+                {
+                    return result;
+                }
             }
         }
 
@@ -70,17 +77,20 @@ public class Evaluator
     {
         var left = Eval(expr.Left);
         var right = Eval(expr.Right);
-
         if (left.Type == ObjectType.Integer && right.Type == ObjectType.Integer)
         {
             return EvalIntegerInfixExpression(expr.Operator, left, right);
         }
 
+        if (left.Type != right.Type) {
+            return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), expr.Operator, right.Type.ToString());
+        }
+        
         return expr.Operator switch
         {
             "==" => NativeBoolToBoolean(left == right),
             "!=" => NativeBoolToBoolean(left != right),
-            _ => Null,
+            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), expr.Operator, right.Type.ToString())
         };
     }
 
@@ -91,7 +101,7 @@ public class Evaluator
 
         if (l == null || r == null)
         {
-            return Null;
+            return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), exprOperator, right.Type.ToString());
         }
 
         return exprOperator switch
@@ -104,7 +114,7 @@ public class Evaluator
             ">" => NativeBoolToBoolean(l.Value > r.Value),
             "==" => NativeBoolToBoolean(l.Value == r.Value),
             "!=" => NativeBoolToBoolean(l.Value != r.Value),
-            _ => Null
+            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), exprOperator, right.Type.ToString()) 
         };
     }
 
@@ -115,7 +125,7 @@ public class Evaluator
         {
             "-" => EvalMinusPrefixOperator(right),
             "!" => EvalBangOperatorExpression(right),
-            _ => Null
+            _ => NewError("unknown operator: {0}{1}", expr.Operator, right.Type.ToString())
         };
     }
 
@@ -123,7 +133,7 @@ public class Evaluator
     {
         if (right.Type != ObjectType.Integer)
         {
-            return Null;
+            return NewError("unknown operator: -{0}", right.Type.ToString()); 
         }
 
         var objInt = right as MonkeyInteger;
@@ -152,9 +162,12 @@ public class Evaluator
         foreach (var stmt in program.Statements)
         {
             result = Eval(stmt);
-            if (result.Type == ObjectType.ReturnValue)
+            switch (result.Type)
             {
-                return (result as MonkeyReturnValue)!.Value;
+                case ObjectType.ReturnValue:
+                    return (result as MonkeyReturnValue)!.Value;
+                case ObjectType.Error:
+                    return result;
             }
         }
 

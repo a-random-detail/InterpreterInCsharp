@@ -103,6 +103,27 @@ if (10 > 1) {
         TestIntegerObject(evaluated, expected);
     }
 
+    //[TestCase("5 + true;", "type mismatch: Integer + Boolean")]
+    //[TestCase("5 + true; 5;", "type mismatch: Integer + Boolean")]
+    //[TestCase("-true;", "unknown operator: -Boolean")]
+    //[TestCase("true + false;", "unknown operator: Boolean + Boolean")]
+    [TestCase("5; true + false; 5;", "unknown operator: Boolean + Boolean")]
+    //[TestCase("if (10 > 1) { true + false; }", "unknown operator: Boolean + Boolean")]
+    /*[TestCase(@"
+if (10 > 1) {
+    if (10 > 1) {
+        return true + false;
+    }
+    return 1;
+}", "unknown operator: Boolean + Boolean")]
+*/
+    public void TestErrorHandling(string input, string expectedMessage) {
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyError>(evaluated);
+        var err = evaluated as MonkeyError;
+        Assert.That(err.Message, Is.EqualTo(expectedMessage));
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
