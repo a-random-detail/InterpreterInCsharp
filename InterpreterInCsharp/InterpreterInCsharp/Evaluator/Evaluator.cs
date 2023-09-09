@@ -10,48 +10,52 @@ public class Evaluator
     private static readonly MonkeyBoolean False = new(false);
     private static readonly MonkeyNull Null = new();
 
-    public static MonkeyObject Eval(Ast.Node node) => node switch
+    public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
-        MonkeyProgram program => EvalProgram(program),
-        ReturnStatement returnStatement => HandleReturnStatement(returnStatement), 
-        BlockStatement blockStatement => EvalBlockStatement(blockStatement.Statements.ToList()),
-        IfExpression ifExpression => EvalIfExpression(ifExpression),
-        InfixExpression infixExpression => HandleInfixExpression(infixExpression), 
-        PrefixExpression prefixExpression => HandlePrefixExpression(prefixExpression), 
+        Identifier identifier => EvalIdentifier(identifier, environment),
+        LetStatement letStatement => EvalLetStatement(letStatement, environment),
+        MonkeyProgram program => EvalProgram(program, environment),
+        ReturnStatement returnStatement => HandleReturnStatement(returnStatement, environment),
+        BlockStatement blockStatement => EvalBlockStatement(blockStatement.Statements.ToList(), environment),
+        IfExpression ifExpression => EvalIfExpression(ifExpression, environment),
+        InfixExpression infixExpression => HandleInfixExpression(infixExpression, environment), 
+        PrefixExpression prefixExpression => HandlePrefixExpression(prefixExpression, environment), 
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
         BooleanExpression booleanExpression => NativeBoolToBoolean(booleanExpression.Value),
-        ExpressionStatement expr => Eval(expr.Expression),
+        ExpressionStatement expr => Eval(expr.Expression, environment),
         _ => Null
     };
 
-    private static MonkeyObject HandleInfixExpression(InfixExpression expr) {
-        var left = Eval(expr.Left);
+    private static MonkeyObject HandleInfixExpression(InfixExpression expr, MonkeyEnvironment env) 
+    {
+        var left = Eval(expr.Left, env);
         if (IsError(left))
         {
             return left;
         }
-        var right = Eval(expr.Right);
+        var right = Eval(expr.Right, env);
         if (IsError(right))
         {
             return right;
         }
 
-        return EvalInfixExpression(expr);
+        return EvalInfixExpression(expr, env);
     }
 
-    private static MonkeyObject HandlePrefixExpression(PrefixExpression expr) {
-        var right = Eval(expr.Right);
+    private static MonkeyObject HandlePrefixExpression(PrefixExpression expr, MonkeyEnvironment env) 
+    {
+        var right = Eval(expr.Right, env);
         if (IsError(right))
         {
             return right;
         }
         
-        return EvalPrefixExpression(expr);
+        return EvalPrefixExpression(expr, env);
     }
     
-    private static MonkeyObject HandleReturnStatement(ReturnStatement stmt)
+    private static MonkeyObject HandleReturnStatement(ReturnStatement stmt, MonkeyEnvironment env) 
     {
-        var val = Eval(stmt.Value);
+        var val = Eval(stmt.Value, env);
         if (val.Type == ObjectType.Error)
         {
             return val;
@@ -64,13 +68,36 @@ public class Evaluator
         return new MonkeyError(string.Format(format, args));
     }
 
-    private static MonkeyObject EvalBlockStatement(List<Statement> statements)
+    private static MonkeyObject EvalIdentifier(Identifier node, MonkeyEnvironment env)
+    {
+        var val = env.Get(node.Value);
+        if (val != null)
+        {
+            return val;
+        }
+
+        return NewError("identifier not found: {0}", node.Value);
+    }
+
+    private static MonkeyObject EvalLetStatement(LetStatement stmt, MonkeyEnvironment env)
+    {
+        var val = Eval(stmt.Value, env);
+        if (val.Type == ObjectType.Error)
+        {
+            return val;
+        }
+        env.Set(stmt.Identifier.Value, val);
+        return val;
+    }
+
+    private static MonkeyObject EvalBlockStatement(List<Statement> statements, MonkeyEnvironment env)
     {
         MonkeyObject result = Null;
         foreach (var stmt in statements)
         {
-            result = Eval(stmt);
-            if (result != null) {
+            result = Eval(stmt, env);
+            if (result != null) 
+            {
                 if (result.Type == ObjectType.ReturnValue || result.Type == ObjectType.Error)
                 {
                     return result;
@@ -81,8 +108,8 @@ public class Evaluator
         return result;
     }
 
-    private static MonkeyObject EvalIfExpression(IfExpression expr){
-        var condition = Eval(expr.Condition);
+    private static MonkeyObject EvalIfExpression(IfExpression expr, MonkeyEnvironment env){
+        var condition = Eval(expr.Condition, env);
         if (IsError(condition))
         {
             return condition;
@@ -90,11 +117,11 @@ public class Evaluator
 
         if (IsTruthy(condition))
         {
-            return Eval(expr.Consequence);
+            return Eval(expr.Consequence, env);
         }
         else if (expr.Alternative != null)
         {
-            return Eval(expr.Alternative);
+            return Eval(expr.Alternative, env);
         }
         else
         {
@@ -117,10 +144,10 @@ public class Evaluator
         };
     }
 
-    private static MonkeyObject EvalInfixExpression(InfixExpression expr)
+    private static MonkeyObject EvalInfixExpression(InfixExpression expr, MonkeyEnvironment env)
     {
-        var left = Eval(expr.Left);
-        var right = Eval(expr.Right);
+        var left = Eval(expr.Left, env);
+        var right = Eval(expr.Right, env);
         if (left.Type == ObjectType.Integer && right.Type == ObjectType.Integer)
         {
             return EvalIntegerInfixExpression(expr.Operator, left, right);
@@ -162,9 +189,9 @@ public class Evaluator
         };
     }
 
-    private static MonkeyObject EvalPrefixExpression(PrefixExpression expr)
+    private static MonkeyObject EvalPrefixExpression(PrefixExpression expr, MonkeyEnvironment env)
     {
-        var right = Eval(expr.Right);
+        var right = Eval(expr.Right, env);
         return expr.Operator switch
         {
             "-" => EvalMinusPrefixOperator(right),
@@ -200,12 +227,12 @@ public class Evaluator
         return value ? True : False;
     }   
 
-    private static MonkeyObject EvalProgram(MonkeyProgram program)
+    private static MonkeyObject EvalProgram(MonkeyProgram program, MonkeyEnvironment env)
     {
         MonkeyObject result = null;
         foreach (var stmt in program.Statements)
         {
-            result = Eval(stmt);
+            result = Eval(stmt, env);
             switch (result.Type)
             {
                 case ObjectType.ReturnValue:

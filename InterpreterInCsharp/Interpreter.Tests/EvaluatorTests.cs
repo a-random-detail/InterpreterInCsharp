@@ -53,13 +53,6 @@ public class EvaluatorTests
         TestBooleanObject(evaluated, expectedValue);
     }
     
-    [Test]
-    public void TestNullObject()
-    {
-        var evaluated = TestEval("null");
-        Assert.IsInstanceOf<MonkeyNull>(evaluated);
-    }
-
     [TestCase("!true", false)]
     [TestCase("!false", true)]
     [TestCase("!5", false)]
@@ -116,6 +109,7 @@ if (10 > 1) {
     }
     return 1;
 }", "unknown operator: Boolean + Boolean")]
+    [TestCase("foobar", "identifier not found: foobar")]
     public void TestErrorHandling(string input, string expectedMessage) {
         var evaluated = TestEval(input);
         Assert.IsInstanceOf<MonkeyError>(evaluated);
@@ -135,7 +129,8 @@ if (10 > 1) {
         Lexer lexer = new(input);
         Parser parser = new(lexer);
         MonkeyProgram program = parser.ParseProgram();
-        return Evaluator.Eval(program);
+        MonkeyEnvironment env = MonkeyEnvironment.NewEnvironment();
+        return Evaluator.Eval(program, env);
     }
 
     private void TestIntegerObject(MonkeyObject obj, Int64 expected)

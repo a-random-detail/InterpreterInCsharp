@@ -1,3 +1,4 @@
+using InterpreterInCsharp.Object;
 namespace InterpreterInCsharp;
 
 public class Repl
@@ -7,6 +8,7 @@ public class Repl
     public static void Start()
     {
         Token nextToken;
+        MonkeyEnvironment environment = MonkeyEnvironment.NewEnvironment();
         Console.Write(Prompt);
         while(true)
         {
@@ -25,7 +27,7 @@ public class Repl
                 continue;
             }
 
-            var evaluated = Evaluator.Evaluator.Eval(program);
+            var evaluated = Evaluator.Evaluator.Eval(program, environment);
             if (evaluated != null)
             {
                 Console.WriteLine(evaluated.Inspect());
