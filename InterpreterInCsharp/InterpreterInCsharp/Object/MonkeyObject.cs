@@ -1,3 +1,5 @@
+using InterpreterInCsharp.Ast;
+
 namespace InterpreterInCsharp.Object;
 
 public enum ObjectType
@@ -6,7 +8,8 @@ public enum ObjectType
     Boolean,
     Null,
     ReturnValue,
-    Error
+    Error,
+    Function
 }
 public interface MonkeyObject
 {
@@ -42,5 +45,11 @@ public record MonkeyError(string Message) : MonkeyObject
 {
     public ObjectType Type => ObjectType.Error;
     public string Inspect() => $"ERROR: {Message}";
+}
+
+public record MonkeyFunction(Identifier[] Parameters, BlockStatement Body, MonkeyEnvironment Env) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Function;
+    public string Inspect() => $"fn({string.Join(", ", Parameters.Select(p => p.String))}) {{\n{Body.String}\n}}";
 }
 

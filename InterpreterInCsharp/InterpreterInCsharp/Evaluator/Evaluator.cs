@@ -12,6 +12,9 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
+        
+        CallExpression callExpression => EvalCallExpression(callExpression, environment),
+        FunctionLiteral functionLiteral => new MonkeyFunction(functionLiteral.Parameters, functionLiteral.Body, environment),
         Identifier identifier => EvalIdentifier(identifier, environment),
         LetStatement letStatement => EvalLetStatement(letStatement, environment),
         MonkeyProgram program => EvalProgram(program, environment),
@@ -67,6 +70,67 @@ public class Evaluator
     {
         return new MonkeyError(string.Format(format, args));
     }
+    
+    private static MonkeyObject EvalCallExpression(CallExpression expr, MonkeyEnvironment env) 
+    {
+        var func = Eval(expr.Function, env);
+        if (IsError(func))
+        {
+            return func;
+        }
+        var args = EvalExpressions(expr.Arguments, env);
+        if (args.Count == 1 && IsError(args[0]))
+        {
+            return args[0];
+        }
+
+        return ApplyFunction(func, args);
+    }
+
+    private static MonkeyObject ApplyFunction(MonkeyObject func, List<MonkeyObject> args)
+    {
+        var fn = func as MonkeyFunction;
+        if (fn == null)
+        {
+            return NewError("not a function: {0}", func.Type.ToString());
+        }
+        var extendedEnv = ExtendFunctionEnvironment(fn, args);
+        var evaluated = Eval(fn.Body, extendedEnv);
+        return UnwrapReturnValue(evaluated);
+    }
+
+    private static MonkeyEnvironment ExtendFunctionEnvironment(MonkeyFunction fn, List<MonkeyObject> args)
+    {
+        var env = MonkeyEnvironment.NewEnclosedEnvironment(fn.Env);
+        for (int i = 0; i < fn.Parameters.Count(); i++)
+        {
+            env.Set(fn.Parameters[i].Value, args[i]);
+        }
+
+        return env;
+    }
+
+    private static MonkeyObject UnwrapReturnValue(MonkeyObject obj) => obj switch
+    {
+        MonkeyReturnValue returnValue => returnValue.Value,
+        _ => obj
+    };
+
+    private static List<MonkeyObject> EvalExpressions(Expression[] args, MonkeyEnvironment env)
+    {
+        var result = new List<MonkeyObject>();
+        foreach (var arg in args)
+        {
+            var evaluated = Eval(arg, env);
+            if (IsError(evaluated))
+            {
+                return new List<MonkeyObject> { evaluated };
+            }
+            result.Add(evaluated);
+        }
+
+        return result;
+    } 
 
     private static MonkeyObject EvalIdentifier(Identifier node, MonkeyEnvironment env)
     {

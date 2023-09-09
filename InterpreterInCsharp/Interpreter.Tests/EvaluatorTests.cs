@@ -116,6 +116,30 @@ if (10 > 1) {
         var err = evaluated as MonkeyError;
         Assert.That(err.Message, Is.EqualTo(expectedMessage));
     }
+    
+    [Test]
+    public void TestFunctionObject()
+    {
+        var input = "fn(x) { x + 2; };";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyFunction>(evaluated);
+        var fn = evaluated as MonkeyFunction;
+        Assert.That(fn.Parameters.Count, Is.EqualTo(1));
+        Assert.That(fn.Parameters[0].String, Is.EqualTo("x"));
+        Assert.That(fn.Body.String, Is.EqualTo("(x + 2)"));
+    }
+
+    [TestCase("let identity = fn(x) { x; }; identity(5);", 5)]
+    [TestCase("let identity = fn(x) { return x; }; identity(5);", 5)]
+    [TestCase("let double = fn(x) { x * 2; }; double(5);", 10)]
+    [TestCase("let add = fn(x, y) { x + y; }; add(5, 5);", 10)]
+    [TestCase("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20)]
+    [TestCase("fn(x) { x; }(5)", 5)]    
+    public void TestFunctionApplication(string input, Int64 expectedValue)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expectedValue);
+    }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
