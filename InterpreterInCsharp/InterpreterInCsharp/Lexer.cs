@@ -115,16 +115,29 @@ public class Lexer
         while (true)
         {
             ReadChar();
-            if (_ch == '\\' && PeekChar() == 't'){
-               ReadChar();
-               ReadChar();
-               stringResult += "\\t"; 
-            }
             if (_ch == '"' || _ch == '\0')
             {
                 break;
             }
-            stringResult += _ch;
+            var withPeekChar = _ch + PeekChar().ToString();
+            switch (withPeekChar)
+            {
+                case "\\t":
+                    stringResult += "\\t";
+                    ReadChar();
+                    break;
+                case "\\n":
+                    stringResult += "\\n";
+                    ReadChar();
+                    break;
+                case "\\\"":
+                    stringResult += "\\\"";
+                    ReadChar();
+                    break;
+                default:
+                    stringResult += _ch;
+                    break;
+            }
         }
         return stringResult;    
     }
