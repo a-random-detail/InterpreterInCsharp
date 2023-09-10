@@ -141,6 +141,20 @@ if (10 > 1) {
         TestIntegerObject(evaluated, expectedValue);
     }
 
+   [Test]
+   public void TestClosures() 
+   {
+       var input = @"
+let newAdder = fn(x) {
+    fn(y) { x + y };
+};
+let addTwo = newAdder(2);
+addTwo(2);";
+        
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, 4);
+   }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
