@@ -33,5 +33,7 @@ public enum TokenType
     LessThan,
     GreaterThan,
     IsEqual,
-    NotEqual
+    NotEqual,
+    //Placeholder for program
+    Program
 }
