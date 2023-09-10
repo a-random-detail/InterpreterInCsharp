@@ -13,6 +13,7 @@ public class Evaluator
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
         
+        StringLiteral stringLiteral => new MonkeyString(stringLiteral.Value),
         CallExpression callExpression => EvalCallExpression(callExpression, environment),
         FunctionLiteral functionLiteral => new MonkeyFunction(functionLiteral.Parameters, functionLiteral.Body, environment),
         Identifier identifier => EvalIdentifier(identifier, environment),

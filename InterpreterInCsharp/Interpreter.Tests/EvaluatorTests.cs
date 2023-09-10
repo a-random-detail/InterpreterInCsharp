@@ -141,9 +141,9 @@ if (10 > 1) {
         TestIntegerObject(evaluated, expectedValue);
     }
 
-   [Test]
-   public void TestClosures() 
-   {
+    [Test]
+    public void TestClosures() 
+    {
        var input = @"
 let newAdder = fn(x) {
     fn(y) { x + y };
@@ -153,7 +153,17 @@ addTwo(2);";
         
         var evaluated = TestEval(input);
         TestIntegerObject(evaluated, 4);
-   }
+    }
+
+    [Test]
+    public void TestStringLiteral() 
+    {
+        var input = @"""Hello World!""";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyString>(evaluated);
+        var str = evaluated as MonkeyString;
+        Assert.That(str.Value, Is.EqualTo("Hello World!"));
+    }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {

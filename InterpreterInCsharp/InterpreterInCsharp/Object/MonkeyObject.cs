@@ -9,7 +9,8 @@ public enum ObjectType
     Null,
     ReturnValue,
     Error,
-    Function
+    Function,
+    String
 }
 public interface MonkeyObject
 {
