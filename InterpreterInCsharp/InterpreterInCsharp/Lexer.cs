@@ -111,15 +111,21 @@ public class Lexer
     private string ReadString()
     {
         var initialPosition = _position + 1;
+        string stringResult = "";
         while (true)
         {
             ReadChar();
+            if (_ch == '\\' && PeekChar() == 't'){
+               ReadChar();
+               ReadChar();
+               stringResult += "\\t"; 
+            }
             if (_ch == '"' || _ch == '\0')
             {
                 break;
             }
+            stringResult += _ch;
         }
-        var stringResult = _input[initialPosition.._position];
         return stringResult;    
     }
 

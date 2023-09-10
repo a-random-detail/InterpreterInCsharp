@@ -32,6 +32,7 @@ if (5 < 10) {
 -52;
 ""foo bar"";
 ""foobar"";
+""hello\t\tworld"";
 ";
         
         var tokens = new List<Token>
@@ -126,6 +127,9 @@ if (5 < 10) {
             new(TokenType.String, "foo bar"),
             new(TokenType.Semicolon, ";"),
             new(TokenType.String, "foobar"),
+            new(TokenType.Semicolon, ";"),
+
+            new(TokenType.String, "hello\\t\\tworld"),
             new(TokenType.Semicolon, ";"),
             new(TokenType.Eof, "")
         };
