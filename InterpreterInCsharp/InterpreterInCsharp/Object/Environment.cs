@@ -8,19 +8,19 @@ public class MonkeyEnvironment {
 
     public static MonkeyEnvironment NewEnclosedEnvironment(MonkeyEnvironment outer) => new() {_outer = outer};
 
-    public MonkeyObject Get(string name)
+    public bool TryGet(string name, out MonkeyObject result)
     {
-        if (_store.TryGetValue(name, out var value))
+        if (_store.TryGetValue(name, out result))
         {
-            return value;
+            return true;
         }
 
         if (_outer != null)
         {
-            return _outer.Get(name);
+            return _outer.TryGet(name, out result);
         }
 
-        return null;
+        return false;
     }
 
     public MonkeyObject Set(string name, MonkeyObject value)

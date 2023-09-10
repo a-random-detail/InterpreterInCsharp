@@ -134,8 +134,8 @@ public class Evaluator
 
     private static MonkeyObject EvalIdentifier(Identifier node, MonkeyEnvironment env)
     {
-        var val = env.Get(node.Value);
-        if (val != null)
+        var ok = env.TryGet(node.Value, out MonkeyObject val);
+        if (ok)
         {
             return val;
         }
