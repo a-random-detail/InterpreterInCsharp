@@ -79,6 +79,9 @@ public class Lexer
             case '}':
                 token = new Token(TokenType.Rbrace, _ch);
                 break;
+            case '"':
+                token = new Token(TokenType.String, ReadString());
+                break;
             case '\0':
                 token = new Token(TokenType.Eof, "");
                 break;
@@ -103,6 +106,21 @@ public class Lexer
         }
         ReadChar();
         return token;
+    }
+
+    private string ReadString()
+    {
+        var initialPosition = _position + 1;
+        while (true)
+        {
+            ReadChar();
+            if (_ch == '"' || _ch == '\0')
+            {
+                break;
+            }
+        }
+        var stringResult = _input[initialPosition.._position];
+        return stringResult;    
     }
 
     private char PeekChar()

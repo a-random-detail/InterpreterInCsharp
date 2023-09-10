@@ -35,5 +35,6 @@ public enum TokenType
     IsEqual,
     NotEqual,
     //Placeholder for program
-    Program
+    Program,
+    String
 }

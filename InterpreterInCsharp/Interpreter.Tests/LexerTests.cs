@@ -30,6 +30,8 @@ if (5 < 10) {
 19 != 20;
 !9;
 -52;
+""foo bar"";
+""foobar"";
 ";
         
         var tokens = new List<Token>
@@ -121,6 +123,10 @@ if (5 < 10) {
             new(TokenType.Int, "52"),
             new(TokenType.Semicolon, ";"),
 
+            new(TokenType.String, "foo bar"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.String, "foobar"),
+            new(TokenType.Semicolon, ";"),
             new(TokenType.Eof, "")
         };
 
