@@ -319,5 +319,21 @@ let 838383;";
         TestHelpers.TestInfixExpression(callExpression.Arguments[1], 2, "*", 3);
         TestHelpers.TestInfixExpression(callExpression.Arguments[2], 4, "+", 5);
     }
-
+    
+    [Test]
+    public void TestStringLiteralExpression()
+    {
+        var input = "\"hello world\"";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<StringLiteral>(expressionStatement.Expression);
+        var stringLiteral = expressionStatement.Expression as StringLiteral;
+        Assert.That(stringLiteral.Value, Is.EqualTo("hello world"));
+    }
 }

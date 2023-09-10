@@ -45,6 +45,7 @@ public class Parser
         RegisterPrefix(TokenType.Lparen, ParseGroupedExpression);
         RegisterPrefix(TokenType.If, ParseIfExpression);
         RegisterPrefix(TokenType.Function, ParseFunctionLiteral);
+        RegisterPrefix(TokenType.String, ParseStringLiteral);
         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
@@ -59,6 +60,11 @@ public class Parser
         
         NextToken();
         NextToken();
+    }
+
+    private Expression? ParseStringLiteral()
+    {
+        return new StringLiteral(_curToken, _curToken.Literal);
     }
 
     public MonkeyProgram? ParseProgram()
