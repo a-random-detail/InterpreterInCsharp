@@ -54,3 +54,9 @@ public record MonkeyFunction(Identifier[] Parameters, BlockStatement Body, Monke
     public string Inspect() => $"fn({string.Join(", ", Parameters.Select(p => p.String))}) {{\n{Body.String}\n}}";
 }
 
+public record MonkeyString(string Value) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.String;
+    public string Inspect() => Value;
+}
+
