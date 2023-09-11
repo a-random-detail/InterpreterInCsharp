@@ -218,6 +218,11 @@ public class Evaluator
             return EvalIntegerInfixExpression(expr.Operator, left, right);
         }
 
+        if (left.Type == ObjectType.String && right.Type == ObjectType.String)
+        {
+            return EvalStringInfixExpression(expr.Operator, left, right);
+        }
+
         if (left.Type != right.Type) {
             return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), expr.Operator, right.Type.ToString());
         }
@@ -228,6 +233,23 @@ public class Evaluator
             "!=" => NativeBoolToBoolean(left != right),
             _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), expr.Operator, right.Type.ToString())
         };
+    }
+
+    private static MonkeyObject EvalStringInfixExpression(string @operator, MonkeyObject left, MonkeyObject right)
+    {
+       MonkeyString? l = left as MonkeyString; 
+       MonkeyString? r = right as MonkeyString;
+
+       if (l == null || r == null)
+       {
+           return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString());
+       }
+
+       return @operator switch
+       {
+           "+" => new MonkeyString(l.Value + r.Value),
+           _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString())
+       };
     }
 
     private static MonkeyObject EvalIntegerInfixExpression(string exprOperator, MonkeyObject left, MonkeyObject right)

@@ -165,6 +165,16 @@ addTwo(2);";
         Assert.That(str.Value, Is.EqualTo("Hello World!"));
     }
 
+    [Test]
+    public void TestStringConcatenation() 
+    {
+        var input = @"""Hello"" + "" "" + ""World!""";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyString>(evaluated);
+        var str = evaluated as MonkeyString;
+        Assert.That(str.Value, Is.EqualTo("Hello World!"));
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
