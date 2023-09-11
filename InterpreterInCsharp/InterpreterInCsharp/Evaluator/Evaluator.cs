@@ -254,17 +254,17 @@ public class Evaluator
        };
     }
 
-    private static MonkeyObject EvalIntegerInfixExpression(string exprOperator, MonkeyObject left, MonkeyObject right)
+    private static MonkeyObject EvalIntegerInfixExpression(string @operator, MonkeyObject left, MonkeyObject right)
     {
         MonkeyInteger? l = left as MonkeyInteger;
         MonkeyInteger? r = right as MonkeyInteger;
 
         if (l == null || r == null)
         {
-            return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), exprOperator, right.Type.ToString());
+            return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString());
         }
 
-        return exprOperator switch
+        return @operator switch
         {
             "*" => new MonkeyInteger(l.Value * r.Value),
             "/" => new MonkeyInteger(l.Value / r.Value),
@@ -274,7 +274,7 @@ public class Evaluator
             ">" => NativeBoolToBoolean(l.Value > r.Value),
             "==" => NativeBoolToBoolean(l.Value == r.Value),
             "!=" => NativeBoolToBoolean(l.Value != r.Value),
-            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), exprOperator, right.Type.ToString()) 
+            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString()) 
         };
     }
 
