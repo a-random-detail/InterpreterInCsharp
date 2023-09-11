@@ -175,14 +175,17 @@ addTwo(2);";
         Assert.That(str.Value, Is.EqualTo("Hello World!"));
     }
 
-    [Test]
-    public void TestStringErrorHandling() 
+    [TestCase("-")]
+    [TestCase("*")]
+    [TestCase("/")]
+    public void TestStringErrorHandling(string @operator) 
     {
-        var input = @"""Hello"" - ""World!""";
+        var input = $"\"Hello\" {@operator} \"World!\"";
+        Console.WriteLine(input);
         var evaluated = TestEval(input);
         Assert.IsInstanceOf<MonkeyError>(evaluated);
         var err = evaluated as MonkeyError;
-        Assert.That(err.Message, Is.EqualTo("unknown operator: String - String"));
+        Assert.That(err.Message, Is.EqualTo($"unknown operator: String {@operator} String"));
     }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
