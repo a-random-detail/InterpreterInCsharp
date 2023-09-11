@@ -248,6 +248,8 @@ public class Evaluator
        return @operator switch
        {
            "+" => new MonkeyString(l.Value + r.Value),
+           "==" => NativeBoolToBoolean(l.Value.Equals(r.Value)),
+           "!=" => NativeBoolToBoolean(!l.Value.Equals(r.Value)),
            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString())
        };
     }

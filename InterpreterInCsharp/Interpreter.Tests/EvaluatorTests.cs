@@ -175,13 +175,26 @@ addTwo(2);";
         Assert.That(str.Value, Is.EqualTo("Hello World!"));
     }
 
+    [TestCase(@"""Hello"" == ""Hello""", true)]
+    [TestCase(@"""Hello"" != ""Hello""", false)]
+    [TestCase(@"""Hello"" == ""World""", false)]
+    [TestCase(@"""Hello"" != ""World""", true)]
+    public void TestStringComparison(string input, bool expected)
+    {
+        var evaluated = TestEval(input);
+        if (evaluated.GetType() != typeof(MonkeyBoolean)){
+            var error = evaluated as MonkeyError;
+            Console.WriteLine(error.Message);
+        }
+        TestBooleanObject(evaluated, expected); 
+    }
+
     [TestCase("-")]
     [TestCase("*")]
     [TestCase("/")]
     public void TestStringErrorHandling(string @operator) 
     {
         var input = $"\"Hello\" {@operator} \"World!\"";
-        Console.WriteLine(input);
         var evaluated = TestEval(input);
         Assert.IsInstanceOf<MonkeyError>(evaluated);
         var err = evaluated as MonkeyError;
