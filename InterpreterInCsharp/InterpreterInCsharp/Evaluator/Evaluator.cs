@@ -88,7 +88,14 @@ public class Evaluator
         return ApplyFunction(func, args);
     }
 
-    private static MonkeyObject ApplyFunction(MonkeyObject func, List<MonkeyObject> args)
+    private static MonkeyObject ApplyFunction(MonkeyObject func, List<MonkeyObject> args) => func switch
+    {
+        MonkeyFunction function => EvalFunctionCall(function, args),
+        MonkeyBuiltin builtin => builtin.Fn(args.ToArray()),
+        _ => NewError("not a function: {0}", func.Type.ToString())
+    };
+
+    private static MonkeyObject EvalFunctionCall(MonkeyFunction func, List<MonkeyObject> args) 
     {
         var fn = func as MonkeyFunction;
         if (fn == null)
@@ -97,7 +104,7 @@ public class Evaluator
         }
         var extendedEnv = ExtendFunctionEnvironment(fn, args);
         var evaluated = Eval(fn.Body, extendedEnv);
-        return UnwrapReturnValue(evaluated);
+        return UnwrapReturnValue(evaluated); 
     }
 
     private static MonkeyEnvironment ExtendFunctionEnvironment(MonkeyFunction fn, List<MonkeyObject> args)
@@ -139,6 +146,11 @@ public class Evaluator
         if (ok)
         {
             return val;
+        }
+
+        if (Builtins.BuiltinsMap.TryGetValue(node.Value, out MonkeyBuiltin builtin))
+        {
+            return builtin;
         }
 
         return NewError("identifier not found: {0}", node.Value);

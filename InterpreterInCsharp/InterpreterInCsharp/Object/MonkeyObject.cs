@@ -10,7 +10,8 @@ public enum ObjectType
     ReturnValue,
     Error,
     Function,
-    String
+    String,
+    Builtin,
 }
 public interface MonkeyObject
 {
@@ -58,5 +59,11 @@ public record MonkeyString(string Value) : MonkeyObject
 {
     public ObjectType Type => ObjectType.String;
     public string Inspect() => Value;
+}
+
+public record MonkeyBuiltin(Func<MonkeyObject[], MonkeyObject> Fn) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Builtin;
+    public string Inspect() => "builtin function";
 }
 

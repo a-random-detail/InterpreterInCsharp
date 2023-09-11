@@ -201,6 +201,30 @@ addTwo(2);";
         Assert.That(err.Message, Is.EqualTo($"unknown operator: String {@operator} String"));
     }
 
+    [TestCase("len(\"\")", 0)]
+    [TestCase("len(\"four\")", 4)]
+    [TestCase("len(\"hello world\")", 11)]
+    [TestCase("len(1)", "argument to `len` not supported, got Integer")]
+    [TestCase("len(\"one\", \"two\")", "wrong number of arguments. got=2, want=1")]
+    public void TestStringLengthBuiltinFunction(string input, object expected)
+    {
+        var evaluated = TestEval(input);
+        switch (expected){
+            case string:
+                Assert.IsInstanceOf<MonkeyError>(evaluated);
+                var err = evaluated as MonkeyError;
+                Assert.That(err.Message, Is.EqualTo(expected));
+                break;
+            case int:
+                Assert.IsInstanceOf<MonkeyInteger>(evaluated);
+                var integer = evaluated as MonkeyInteger;
+                Assert.That(integer.Value, Is.EqualTo(expected));
+                break;
+            default:
+                throw new Exception("unexpected type");
+        }
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
