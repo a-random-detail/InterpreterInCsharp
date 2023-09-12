@@ -162,6 +162,8 @@ let 838383;";
     [TestCase("a + add(b * c) + d", "((a + add((b * c))) + d)")]
     [TestCase("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")]
     [TestCase("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")]
+    [TestCase("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)")]
+    [TestCase("add(a * b[2], b[1], 2 * [1, 2][1])","add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -355,5 +357,23 @@ let 838383;";
         TestHelpers.TestIntegerLiteral(arrayLiteral.Elements[0], 1);
         TestHelpers.TestInfixExpression(arrayLiteral.Elements[1], 2, "*", 2);
         TestHelpers.TestInfixExpression(arrayLiteral.Elements[2], 3, "+", 3);
+    }
+
+    [Test]
+    public void TestIndexExpressions() 
+    {
+        var input = "myArray[1 + 1]";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<IndexExpression>(expressionStatement.Expression);
+        var indexExpression = expressionStatement.Expression as IndexExpression;
+        TestHelpers.TestIdentifier(indexExpression.Left, "myArray");
+        TestHelpers.TestInfixExpression(indexExpression.Index, 1, "+", 1);
     }
 }

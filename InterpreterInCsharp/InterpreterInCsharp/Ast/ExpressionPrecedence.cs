@@ -8,5 +8,6 @@ public enum ExpressionPrecedence
     Sum, // +
     Product, // *
     Prefix, // -X or !X
-    Call // myFunction(X)
+    Call, // myFunction(X)
+    Index // array[index]
 }

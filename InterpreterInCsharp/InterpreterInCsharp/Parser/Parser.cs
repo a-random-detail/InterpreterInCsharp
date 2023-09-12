@@ -27,7 +27,8 @@ public class Parser
             { TokenType.Minus, ExpressionPrecedence.Sum },
             { TokenType.Star, ExpressionPrecedence.Product },
             { TokenType.Slash, ExpressionPrecedence.Product },
-            {TokenType.Lparen, ExpressionPrecedence.Call}
+            {TokenType.Lparen, ExpressionPrecedence.Call},
+            {TokenType.LBracket, ExpressionPrecedence.Index}
         };
 
     public Parser(Lexer lexer, bool traceEnabled = false)
@@ -47,7 +48,7 @@ public class Parser
         RegisterPrefix(TokenType.Function, ParseFunctionLiteral);
         RegisterPrefix(TokenType.String, ParseStringLiteral);
         RegisterPrefix(TokenType.LBracket, ParseArrayLiteral);
-        
+         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
         RegisterInfix(TokenType.Minus, ParseInfixExpression);
@@ -58,9 +59,20 @@ public class Parser
         RegisterInfix(TokenType.LessThan, ParseInfixExpression);
         RegisterInfix(TokenType.GreaterThan, ParseInfixExpression);
         RegisterInfix(TokenType.Lparen, ParseCallExpression);
+        RegisterInfix(TokenType.LBracket, ParseIndexExpression);
         
         NextToken();
         NextToken();
+    }
+
+    private Expression? ParseIndexExpression(Expression expression)
+    {
+        var initialToken = _curToken;
+        NextToken();
+        var index = ParseExpression(ExpressionPrecedence.Lowest);
+        if (!ExpectPeekTokenType(TokenType.RBracket))
+            return null;
+        return new IndexExpression(initialToken, expression, index);
     }
 
     private Expression? ParseArrayLiteral()
