@@ -336,4 +336,24 @@ let 838383;";
         var stringLiteral = expressionStatement.Expression as StringLiteral;
         Assert.That(stringLiteral.Value, Is.EqualTo("hello world"));
     }
+
+    [Test]
+    public void TestArrayLiteral()
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<ArrayLiteral>(expressionStatement.Expression);
+        var arrayLiteral = expressionStatement.Expression as ArrayLiteral;
+        Assert.That(arrayLiteral.Elements.Length, Is.EqualTo(3));
+        TestHelpers.TestIntegerLiteral(arrayLiteral.Elements[0], 1);
+        TestHelpers.TestInfixExpression(arrayLiteral.Elements[1], 2, "*", 2);
+        TestHelpers.TestInfixExpression(arrayLiteral.Elements[2], 3, "+", 3);
+    }
 }

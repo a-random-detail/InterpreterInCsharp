@@ -46,6 +46,7 @@ public class Parser
         RegisterPrefix(TokenType.If, ParseIfExpression);
         RegisterPrefix(TokenType.Function, ParseFunctionLiteral);
         RegisterPrefix(TokenType.String, ParseStringLiteral);
+        RegisterPrefix(TokenType.LBracket, ParseArrayLiteral);
         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
@@ -60,6 +61,38 @@ public class Parser
         
         NextToken();
         NextToken();
+    }
+
+    private Expression? ParseArrayLiteral()
+    {
+        var initialToken = _curToken;
+        var elements = ParseExpressionList(TokenType.RBracket);
+        return new ArrayLiteral(initialToken, elements);
+    }
+
+    private Expression[] ParseExpressionList(TokenType endToken)
+    {
+        List<Expression> elements = new();
+        if (PeekTokenIs(endToken))
+        {
+            NextToken();
+            return elements.ToArray();
+        }
+
+        NextToken();
+        elements.Add(ParseExpression(ExpressionPrecedence.Lowest));
+
+        while(PeekTokenIs(TokenType.Comma))
+        {
+            NextToken();
+            NextToken();
+            elements.Add(ParseExpression(ExpressionPrecedence.Lowest));
+        }
+
+        if (!ExpectPeekTokenType(endToken))
+            return null;
+
+        return elements.ToArray();
     }
 
     private Expression? ParseStringLiteral()
