@@ -224,6 +224,19 @@ addTwo(2);";
                 throw new Exception("unexpected type");
         }
     }
+   
+    [Test]
+    public void TestArrayLiterals() 
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyArray>(evaluated);
+        var result = evaluated as MonkeyArray;
+        Assert.That(result.Elements.Count, Is.EqualTo(3));
+        TestIntegerObject(result.Elements[0], 1);
+        TestIntegerObject(result.Elements[1], 4);
+        TestIntegerObject(result.Elements[2], 6);
+    }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {

@@ -12,7 +12,7 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
-        
+        ArrayLiteral arrayLiteral => EvalArrayLiteral(arrayLiteral, environment),        
         StringLiteral stringLiteral => new MonkeyString(stringLiteral.Value),
         CallExpression callExpression => EvalCallExpression(callExpression, environment),
         FunctionLiteral functionLiteral => new MonkeyFunction(functionLiteral.Parameters, functionLiteral.Body, environment),
@@ -29,6 +29,18 @@ public class Evaluator
         ExpressionStatement expr => Eval(expr.Expression, environment),
         _ => Null
     };
+
+    private static MonkeyArray EvalArrayLiteral(ArrayLiteral arrayLiteral, MonkeyEnvironment environment)
+    {
+        var elements = EvalExpressions(arrayLiteral.Elements, environment);
+        if (elements.Count == 1 && IsError(elements[0]))
+        {
+            return null;
+        }
+
+        return new MonkeyArray(elements.ToArray());
+        
+    }
 
     private static MonkeyObject HandleInfixExpression(InfixExpression expr, MonkeyEnvironment env) 
     {

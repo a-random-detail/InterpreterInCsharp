@@ -12,6 +12,7 @@ public enum ObjectType
     Function,
     String,
     Builtin,
+    Array,
 }
 public interface MonkeyObject
 {
@@ -67,3 +68,8 @@ public record MonkeyBuiltin(Func<MonkeyObject[], MonkeyObject> Fn) : MonkeyObjec
     public string Inspect() => "builtin function";
 }
 
+public record MonkeyArray(MonkeyObject[] Elements) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Array;
+    public string Inspect() => $"[{string.Join(", ", Elements.Select(e => e.Inspect()))}]";
+}
