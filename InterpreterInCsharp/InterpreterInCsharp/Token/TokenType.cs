@@ -20,6 +20,8 @@ public enum TokenType
     Rparen,
     Lbrace,
     Rbrace,
+    LBracket,
+    RBracket,
     //Keywords
     Function,
     Let,

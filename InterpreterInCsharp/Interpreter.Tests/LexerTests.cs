@@ -35,6 +35,7 @@ if (5 < 10) {
 ""hello\t\tworld"";
 ""hello\nworld"";
 ""\""hello world\"""";
+[1,2];
 ";
         
         var tokens = new List<Token>
@@ -136,6 +137,13 @@ if (5 < 10) {
             new(TokenType.String, "hello\\nworld"),
             new(TokenType.Semicolon, ";"),
             new(TokenType.String, "\\\"hello world\\\""),
+            new(TokenType.Semicolon, ";"),
+
+            new(TokenType.LBracket, "["),
+            new(TokenType.Int, "1"),
+            new(TokenType.Comma, ","),
+            new(TokenType.Int, "2"),
+            new(TokenType.RBracket, "]"),
             new(TokenType.Semicolon, ";"),
             new(TokenType.Eof, "")
         };
