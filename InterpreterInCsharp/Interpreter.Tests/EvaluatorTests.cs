@@ -238,6 +238,20 @@ addTwo(2);";
         TestIntegerObject(result.Elements[2], 6);
     }
 
+    [TestCase("[1,2,3][0]", 1)]
+    [TestCase("[1,2,3][1]", 2)]
+    [TestCase("[1,2,3][2]", 3)]
+    [TestCase("let i = 0; [1][i];", 1)]
+    [TestCase("[1,2,3][1 + 1];", 3)]
+    [TestCase("let myArray = [1, 2, 3]; myArray[2];", 3)]
+    [TestCase("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6)]
+    [TestCase("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2)]
+    public void TestArrayIndexExpressions(string input, Int64 expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);

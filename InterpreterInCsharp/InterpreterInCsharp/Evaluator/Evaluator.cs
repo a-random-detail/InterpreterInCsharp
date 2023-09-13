@@ -12,6 +12,7 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
+        IndexExpression indexExpression => HandleIndexExpression(indexExpression, environment),
         ArrayLiteral arrayLiteral => EvalArrayLiteral(arrayLiteral, environment),        
         StringLiteral stringLiteral => new MonkeyString(stringLiteral.Value),
         CallExpression callExpression => EvalCallExpression(callExpression, environment),
@@ -30,7 +31,43 @@ public class Evaluator
         _ => Null
     };
 
-    private static MonkeyArray EvalArrayLiteral(ArrayLiteral arrayLiteral, MonkeyEnvironment environment)
+    private static MonkeyObject HandleIndexExpression(IndexExpression indexExpression, MonkeyEnvironment environment)
+    {
+        var left = Eval(indexExpression.Left, environment);
+        if (IsError(left))
+        {
+            return left;
+        }
+        var index = Eval(indexExpression.Index, environment);
+        if (IsError(index))
+        {
+            return index;
+        }
+        return EvalIndexExpression(left, index);
+    }
+
+    private static MonkeyObject EvalIndexExpression(MonkeyObject left, MonkeyObject index)
+    {
+        return (left, index) switch
+        {
+            (MonkeyArray array, MonkeyInteger integer) => EvalArrayIndexExpression(array, integer),
+            _ => NewError("index operator not supported: {0}", left.Type.ToString())
+        };
+    }
+
+    private static MonkeyObject EvalArrayIndexExpression(MonkeyArray array, MonkeyInteger integer)
+    {
+        var idx = integer.Value;
+        var max = array.Elements.Count() - 1;
+        if (idx < 0 || idx > max)
+        {
+            return Null;
+        }
+
+        return array.Elements[idx];
+    }
+
+    private static MonkeyObject EvalArrayLiteral(ArrayLiteral arrayLiteral, MonkeyEnvironment environment)
     {
         var elements = EvalExpressions(arrayLiteral.Elements, environment);
         if (elements.Count == 1 && IsError(elements[0]))
