@@ -88,6 +88,9 @@ public class Lexer
             case ']':
                 token = new Token(TokenType.RBracket, _ch);
                 break;
+            case ':':
+                token = new Token(TokenType.Colon, _ch);
+                break;
             case '\0':
                 token = new Token(TokenType.Eof, "");
                 break;

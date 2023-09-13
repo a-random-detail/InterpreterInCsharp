@@ -22,6 +22,7 @@ public enum TokenType
     Rbrace,
     LBracket,
     RBracket,
+    Colon,
     //Keywords
     Function,
     Let,
