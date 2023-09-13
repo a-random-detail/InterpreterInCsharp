@@ -8,7 +8,25 @@ public class Builtins {
         {"first", new MonkeyBuiltin(First)},
         {"last", new MonkeyBuiltin(Last)},
         {"rest", new MonkeyBuiltin(Rest)},
+        {"push", new MonkeyBuiltin(Push)},
     };
+
+    private static MonkeyObject Push(MonkeyObject[] arg)
+    {
+        if (arg.Length != 2)
+        {
+            return new MonkeyError($"wrong number of arguments. got={arg.Length}, want=2");
+        }
+
+        if (arg[0].Type != ObjectType.Array)
+        {
+            return new MonkeyError($"argument to `push` must be ARRAY, got {arg[0].Type}");
+        }
+
+        var arr = arg[0] as MonkeyArray;
+        var newElements = arr?.Elements.Append(arg[1]).ToArray();
+        return new MonkeyArray(newElements);
+    }
 
     private static MonkeyObject Rest(MonkeyObject[] arg)
     {
