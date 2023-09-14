@@ -12,6 +12,7 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
+        HashLiteral hashLiteral => EvalHashLiteral(hashLiteral, environment),
         IndexExpression indexExpression => HandleIndexExpression(indexExpression, environment),
         ArrayLiteral arrayLiteral => EvalArrayLiteral(arrayLiteral, environment),        
         StringLiteral stringLiteral => new MonkeyString(stringLiteral.Value),
@@ -30,6 +31,34 @@ public class Evaluator
         ExpressionStatement expr => Eval(expr.Expression, environment),
         _ => Null
     };
+
+    private static MonkeyObject EvalHashLiteral(HashLiteral hashLiteral, MonkeyEnvironment environment)
+    {
+        var pairs = new Dictionary<MonkeyHashKey, MonkeyHashPair>();
+        
+        foreach(var pair in hashLiteral.Pairs) 
+        {
+            var key = Eval(pair.Key, environment);
+            if (IsError(key))
+            {
+                return key;
+            }
+            var hashKey = key as MonkeyHashable;
+            if (hashKey == null)
+            {
+                return NewError("unusable as hash key: {0}", key.Type.ToString());
+            }
+            var value = Eval(pair.Value, environment);
+            if (IsError(value))
+            {
+                return value;
+            }
+            var hashed = hashKey.HashKey();
+            pairs.Add(hashed, new MonkeyHashPair(key, value));
+        }
+
+        return new MonkeyHash(pairs);
+    }
 
     private static MonkeyObject HandleIndexExpression(IndexExpression indexExpression, MonkeyEnvironment environment)
     {

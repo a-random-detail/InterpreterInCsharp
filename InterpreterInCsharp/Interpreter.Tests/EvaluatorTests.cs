@@ -252,6 +252,41 @@ addTwo(2);";
         TestIntegerObject(evaluated, expected);
     }
 
+    [Test]
+    public void TestHashLiterals()
+    {
+        var input = @"
+let two = ""two"";
+{
+    ""one"": 10 - 9,
+    two: 1 + 1,
+    ""thr"" + ""ee"": 6 / 2,
+    4:4,
+    true: 5,
+    false:6
+};
+";
+        var evaluated = TestEval(input);       
+        Assert.IsInstanceOf<MonkeyHash>(evaluated);
+        var result = evaluated as MonkeyHash;
+        Assert.That(result.Pairs.Count, Is.EqualTo(6));
+        var expected = new Dictionary<MonkeyHashKey, Int64>
+        {
+            {new MonkeyHashKey(ObjectType.String, "one".GetHashCode()), 1},
+            {new MonkeyHashKey(ObjectType.String, "two".GetHashCode()), 2},
+            {new MonkeyHashKey(ObjectType.String, "three".GetHashCode()), 3},
+            {new MonkeyHashKey(ObjectType.Integer, 4), 4},
+            {new MonkeyHashKey(ObjectType.Boolean, 1), 5},
+            {new MonkeyHashKey(ObjectType.Boolean, 0), 6}
+        };
+
+        foreach (var (key, value) in expected)
+        {
+            var actualValue = result.Pairs[key].Value;
+            TestIntegerObject(actualValue, value);
+        }
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
