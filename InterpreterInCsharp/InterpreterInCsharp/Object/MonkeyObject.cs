@@ -77,6 +77,6 @@ public record MonkeyArray(MonkeyObject[] Elements) : MonkeyObject
     public string Inspect() => $"[{string.Join(", ", Elements.Select(e => e.Inspect()))}]";
 }
 
-public record MonkeyHashKey(ObjectType Type, Int64 Value)
-{
-}
+public record MonkeyHashKey(ObjectType Type, Int64 Value){}
+
+public record MonkeyHashPari(MonkeyObject Key, MonkeyObject Value){}
