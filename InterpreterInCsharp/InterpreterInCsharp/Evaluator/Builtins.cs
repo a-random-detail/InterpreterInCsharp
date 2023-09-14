@@ -9,7 +9,27 @@ public class Builtins {
         {"last", new MonkeyBuiltin(Last)},
         {"rest", new MonkeyBuiltin(Rest)},
         {"push", new MonkeyBuiltin(Push)},
+        {"puts", new MonkeyBuiltin(Puts)},
+        {"type", new MonkeyBuiltin(MonkeyType)},
     };
+
+    private static MonkeyObject MonkeyType(MonkeyObject[] arg)
+    {
+        if (arg.Length != 1)
+        {
+            return new MonkeyError($"wrong number of arguments. got={arg.Length}, want=1");
+        }
+        return new MonkeyString(arg[0].Type.ToString());
+    }
+
+    private static MonkeyObject Puts(MonkeyObject[] arg)
+    {
+        foreach (var item in arg)
+        {
+            Console.WriteLine(item.Inspect());
+        }
+        return new MonkeyNull();
+    }
 
     private static MonkeyObject Push(MonkeyObject[] arg)
     {
