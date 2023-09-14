@@ -80,8 +80,26 @@ public class Evaluator
         return (left, index) switch
         {
             (MonkeyArray array, MonkeyInteger integer) => EvalArrayIndexExpression(array, integer),
+            (MonkeyHash hash, MonkeyObject key) => EvalHashIndexExpression(hash, key),
             _ => NewError("index operator not supported: {0}", left.Type.ToString())
         };
+    }
+
+    private static MonkeyObject EvalHashIndexExpression(MonkeyHash hash, MonkeyObject key)
+    {
+        var hashKey = key as MonkeyHashable;
+        
+        if (hashKey == null)
+        {
+            return NewError("unusable as hash key: {0}", key.Type.ToString());
+        }
+
+        if (!hash.Pairs.TryGetValue(hashKey.HashKey(), out MonkeyHashPair pair))
+        {
+            return Null;
+        }
+
+        return pair.Value;
     }
 
     private static MonkeyObject EvalArrayIndexExpression(MonkeyArray array, MonkeyInteger integer)

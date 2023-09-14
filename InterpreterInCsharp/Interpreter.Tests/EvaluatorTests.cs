@@ -287,6 +287,32 @@ let two = ""two"";
         }
     }
 
+    [TestCase("{\"foo\":5}[\"foo\"]", 5)]
+    [TestCase("{\"foo\":5}[\"bar\"]", null)]
+    [TestCase("let key = \"foo\"; {\"foo\":5}[key]", 5)]
+    [TestCase("{}[\"foo\"]", null)]
+    [TestCase("{5:5}[5]", 5)]
+    [TestCase("{true:5}[true]", 5)]
+    [TestCase("{false:5}[false]", 5)]
+    public void TestHashIndexExpressions(string input, Int64? expected)
+    {
+        var evaluated = TestEval(input);
+        if (expected == null)
+            TestNullObject(evaluated);
+        else
+            TestIntegerObject(evaluated, (Int64)expected);
+    }
+
+    [Test]
+    public void TestErrorHandling() 
+    {
+        var input = "{\"foo\":\"bar\"}[fn(x) { x }];";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyError>(evaluated);
+        var err = evaluated as MonkeyError;
+        Assert.That(err.Message, Is.EqualTo("unusable as hash key: Function"));
+    }
+
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {
         Assert.IsInstanceOf<MonkeyBoolean>(evaluated);
