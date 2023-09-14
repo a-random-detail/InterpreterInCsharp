@@ -30,6 +30,8 @@ public record MonkeyInteger(Int64 Value) : MonkeyObject, MonkeyHashable
 
 public record MonkeyBoolean(bool Value) : MonkeyObject, MonkeyHashable
 {
+    public static readonly MonkeyBoolean True = SharedInstances.True;
+    public static readonly MonkeyBoolean False = SharedInstances.False;
     public ObjectType Type => ObjectType.Boolean;
     public string Inspect() => Value.ToString();
     public MonkeyHashKey HashKey() => new(ObjectType.Boolean, Value ? 1 : 0);
@@ -44,6 +46,7 @@ public record MonkeyString(string Value) : MonkeyObject, MonkeyHashable
 
 public record MonkeyNull : MonkeyObject
 {
+    public static readonly MonkeyNull Instance = SharedInstances.Null;
     public ObjectType Type => ObjectType.Null;
     public string Inspect() => "null";
 }

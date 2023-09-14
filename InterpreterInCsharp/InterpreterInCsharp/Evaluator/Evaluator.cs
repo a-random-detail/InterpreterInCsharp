@@ -6,10 +6,6 @@ namespace InterpreterInCsharp.Evaluator;
 public class Evaluator
 {
     
-    private static readonly MonkeyBoolean True = new(true);
-    private static readonly MonkeyBoolean False = new(false);
-    private static readonly MonkeyNull Null = new();
-
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
         HashLiteral hashLiteral => EvalHashLiteral(hashLiteral, environment),
@@ -29,7 +25,7 @@ public class Evaluator
         IntegerLiteral integerLiteral => new MonkeyInteger(integerLiteral.Value),
         BooleanExpression booleanExpression => NativeBoolToBoolean(booleanExpression.Value),
         ExpressionStatement expr => Eval(expr.Expression, environment),
-        _ => Null
+        _ => MonkeyNull.Instance 
     };
 
     private static MonkeyObject EvalHashLiteral(HashLiteral hashLiteral, MonkeyEnvironment environment)
@@ -96,7 +92,7 @@ public class Evaluator
 
         if (!hash.Pairs.TryGetValue(hashKey.HashKey(), out MonkeyHashPair pair))
         {
-            return Null;
+            return MonkeyNull.Instance;
         }
 
         return pair.Value;
@@ -108,7 +104,7 @@ public class Evaluator
         var max = array.Elements.Count() - 1;
         if (idx < 0 || idx > max)
         {
-            return Null;
+            return MonkeyNull.Instance;
         }
 
         return array.Elements[idx];
@@ -119,7 +115,7 @@ public class Evaluator
         var elements = EvalExpressions(arrayLiteral.Elements, environment);
         if (elements.Count == 1 && IsError(elements[0]))
         {
-            return null;
+            return MonkeyNull.Instance;
         }
 
         return new MonkeyArray(elements.ToArray());
@@ -265,7 +261,7 @@ public class Evaluator
 
     private static MonkeyObject EvalBlockStatement(List<Statement> statements, MonkeyEnvironment env)
     {
-        MonkeyObject result = Null;
+        MonkeyObject result = MonkeyNull.Instance;
         foreach (var stmt in statements)
         {
             result = Eval(stmt, env);
@@ -298,7 +294,7 @@ public class Evaluator
         }
         else
         {
-            return Null;
+            return MonkeyNull.Instance;
         }
     }
 
@@ -413,15 +409,15 @@ public class Evaluator
     {
         return right switch
         {
-            MonkeyBoolean boolean => boolean.Value ? False : True,
-            MonkeyNull _ => True,
-            _ => False
+            MonkeyBoolean boolean => boolean.Value ? MonkeyBoolean.False : MonkeyBoolean.True,
+            MonkeyNull _ => MonkeyBoolean.True,
+            _ => MonkeyBoolean.False
         };
     }
 
     private static MonkeyObject NativeBoolToBoolean(bool value)
     {
-        return value ? True : False;
+        return value ? MonkeyBoolean.True : MonkeyBoolean.False;
     }   
 
     private static MonkeyObject EvalProgram(MonkeyProgram program, MonkeyEnvironment env)

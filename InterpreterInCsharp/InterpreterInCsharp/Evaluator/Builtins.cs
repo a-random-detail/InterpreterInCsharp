@@ -28,7 +28,7 @@ public class Builtins {
         {
             Console.WriteLine(item.Inspect());
         }
-        return new MonkeyNull();
+        return MonkeyNull.Instance; 
     }
 
     private static MonkeyObject Push(MonkeyObject[] arg)
@@ -66,7 +66,7 @@ public class Builtins {
             var newElements = arr?.Elements.Skip(1).ToArray();
             return new MonkeyArray(newElements);
         }
-        return new MonkeyNull();
+        return MonkeyNull.Instance; 
     }
 
     private static MonkeyObject Last(MonkeyObject[] arg)
@@ -83,9 +83,9 @@ public class Builtins {
         var length = Len(arg) as MonkeyInteger;
         if (length?.Value > 0)
         {
-            return arr?.Elements[^1] ?? new MonkeyNull();
+            return arr?.Elements[^1] ?? MonkeyNull.Instance;
         }
-        return new MonkeyNull();
+        return MonkeyNull.Instance;
     }
 
     private static MonkeyObject First(MonkeyObject[] arg)
@@ -102,9 +102,9 @@ public class Builtins {
         var length = Len(arg) as MonkeyInteger;
         if (length?.Value > 0)
         {
-            return arr?.Elements[0] ?? new MonkeyNull();
+            return arr?.Elements[0] ?? MonkeyNull.Instance;
         }
-        return new MonkeyNull();
+        return MonkeyNull.Instance;
     }
 
     private static MonkeyObject Len(MonkeyObject[] arg)
