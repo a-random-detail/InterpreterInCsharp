@@ -28,10 +28,8 @@ public class Repl
             }
 
             var evaluated = Evaluator.Evaluator.Eval(program, environment);
-            if (evaluated != null)
-            {
-                Console.WriteLine(evaluated.Inspect());
-            }
+            Console.WriteLine(evaluated.Inspect());
+
         } 
     }
 

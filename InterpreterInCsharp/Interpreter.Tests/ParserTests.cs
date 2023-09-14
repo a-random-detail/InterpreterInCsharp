@@ -162,6 +162,8 @@ let 838383;";
     [TestCase("a + add(b * c) + d", "((a + add((b * c))) + d)")]
     [TestCase("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")]
     [TestCase("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")]
+    [TestCase("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)")]
+    [TestCase("add(a * b[2], b[1], 2 * [1, 2][1])","add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -319,5 +321,126 @@ let 838383;";
         TestHelpers.TestInfixExpression(callExpression.Arguments[1], 2, "*", 3);
         TestHelpers.TestInfixExpression(callExpression.Arguments[2], 4, "+", 5);
     }
+    
+    [Test]
+    public void TestStringLiteralExpression()
+    {
+        var input = "\"hello world\"";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<StringLiteral>(expressionStatement.Expression);
+        var stringLiteral = expressionStatement.Expression as StringLiteral;
+        Assert.That(stringLiteral.Value, Is.EqualTo("hello world"));
+    }
 
+    [Test]
+    public void TestArrayLiteral()
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<ArrayLiteral>(expressionStatement.Expression);
+        var arrayLiteral = expressionStatement.Expression as ArrayLiteral;
+        Assert.That(arrayLiteral.Elements.Length, Is.EqualTo(3));
+        TestHelpers.TestIntegerLiteral(arrayLiteral.Elements[0], 1);
+        TestHelpers.TestInfixExpression(arrayLiteral.Elements[1], 2, "*", 2);
+        TestHelpers.TestInfixExpression(arrayLiteral.Elements[2], 3, "+", 3);
+    }
+
+    [Test]
+    public void TestIndexExpressions() 
+    {
+        var input = "myArray[1 + 1]";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<IndexExpression>(expressionStatement.Expression);
+        var indexExpression = expressionStatement.Expression as IndexExpression;
+        TestHelpers.TestIdentifier(indexExpression.Left, "myArray");
+        TestHelpers.TestInfixExpression(indexExpression.Index, 1, "+", 1);
+    }
+
+    [Test]
+    public void TestHashLiteral() 
+    {
+        var input = @"{ ""one"": 1, ""two"": 2, ""three"": 3 }";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+    
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<HashLiteral>(expressionStatement.Expression);
+        var hashLiteral = expressionStatement.Expression as HashLiteral;
+        Assert.That(hashLiteral.Pairs.Count, Is.EqualTo(3));
+        Assert.That(hashLiteral.Pairs.Keys.Count, Is.EqualTo(3));
+        Assert.That(hashLiteral.Pairs.Values.Count, Is.EqualTo(3));
+        Assert.That(hashLiteral.Pairs.Keys.First().String, Is.EqualTo("one"));
+        TestHelpers.TestIntegerLiteral(hashLiteral.Pairs.Values.First(), 1);
+        Assert.That(hashLiteral.Pairs.Keys.Skip(1).First().String, Is.EqualTo("two"));
+        TestHelpers.TestIntegerLiteral(hashLiteral.Pairs.Values.Skip(1).First(), 2);
+        Assert.That(hashLiteral.Pairs.Keys.Skip(2).First().String, Is.EqualTo("three"));
+        TestHelpers.TestIntegerLiteral(hashLiteral.Pairs.Values.Skip(2).First(), 3);
+    }
+
+    [Test]
+    public void TestEmptyHashLiteral() 
+    {
+        var input = "{}";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<HashLiteral>(expressionStatement.Expression);
+        var hashLiteral = expressionStatement.Expression as HashLiteral;
+        Assert.That(hashLiteral.Pairs.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void TestHashLiteralsWithExpressions()
+    {
+        var input = "{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}";
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+
+        Assert.That(program.Statements.Count, Is.EqualTo(1));
+        var statement = program.Statements[0];
+        Assert.IsInstanceOf<ExpressionStatement>(statement);
+        var expressionStatement = statement as ExpressionStatement;
+        Assert.IsInstanceOf<HashLiteral>(expressionStatement.Expression);
+        var hashLiteral = expressionStatement.Expression as HashLiteral;
+        Assert.That(hashLiteral.Pairs.Count, Is.EqualTo(3));
+        Assert.That(hashLiteral.Pairs.Keys.Count, Is.EqualTo(3));
+        Assert.That(hashLiteral.Pairs.Values.Count, Is.EqualTo(3));
+        Assert.That(hashLiteral.Pairs.Keys.First().String, Is.EqualTo("one"));
+        TestHelpers.TestInfixExpression(hashLiteral.Pairs.Values.First(), 0, "+", 1);
+        Assert.That(hashLiteral.Pairs.Keys.Skip(1).First().String, Is.EqualTo("two"));
+        TestHelpers.TestInfixExpression(hashLiteral.Pairs.Values.Skip(1).First(), 10, "-", 8);
+        Assert.That(hashLiteral.Pairs.Keys.Skip(2).First().String, Is.EqualTo("three"));
+        TestHelpers.TestInfixExpression(hashLiteral.Pairs.Values.Skip(2).First(), 15, "/", 5);
+    }
 }

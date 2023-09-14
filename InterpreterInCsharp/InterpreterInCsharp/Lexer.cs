@@ -79,6 +79,18 @@ public class Lexer
             case '}':
                 token = new Token(TokenType.Rbrace, _ch);
                 break;
+            case '"':
+                token = new Token(TokenType.String, ReadString());
+                break;
+            case '[':
+                token = new Token(TokenType.LBracket, _ch);
+                break;
+            case ']':
+                token = new Token(TokenType.RBracket, _ch);
+                break;
+            case ':':
+                token = new Token(TokenType.Colon, _ch);
+                break;
             case '\0':
                 token = new Token(TokenType.Eof, "");
                 break;
@@ -103,6 +115,40 @@ public class Lexer
         }
         ReadChar();
         return token;
+    }
+
+    private string ReadString()
+    {
+        var initialPosition = _position + 1;
+        string stringResult = "";
+        while (true)
+        {
+            ReadChar();
+            if (_ch == '"' || _ch == '\0')
+            {
+                break;
+            }
+            var withPeekChar = _ch + PeekChar().ToString();
+            switch (withPeekChar)
+            {
+                case "\\t":
+                    stringResult += "\\t";
+                    ReadChar();
+                    break;
+                case "\\n":
+                    stringResult += "\\n";
+                    ReadChar();
+                    break;
+                case "\\\"":
+                    stringResult += "\\\"";
+                    ReadChar();
+                    break;
+                default:
+                    stringResult += _ch;
+                    break;
+            }
+        }
+        return stringResult;    
     }
 
     private char PeekChar()

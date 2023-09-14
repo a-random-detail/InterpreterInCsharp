@@ -20,6 +20,9 @@ public enum TokenType
     Rparen,
     Lbrace,
     Rbrace,
+    LBracket,
+    RBracket,
+    Colon,
     //Keywords
     Function,
     Let,
@@ -35,5 +38,6 @@ public enum TokenType
     IsEqual,
     NotEqual,
     //Placeholder for program
-    Program
+    Program,
+    String
 }

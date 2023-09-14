@@ -30,6 +30,13 @@ if (5 < 10) {
 19 != 20;
 !9;
 -52;
+""foo bar"";
+""foobar"";
+""hello\t\tworld"";
+""hello\nworld"";
+""\""hello world\"""";
+[1,2];
+{""foo"": ""bar""};
 ";
         
         var tokens = new List<Token>
@@ -121,6 +128,31 @@ if (5 < 10) {
             new(TokenType.Int, "52"),
             new(TokenType.Semicolon, ";"),
 
+            new(TokenType.String, "foo bar"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.String, "foobar"),
+            new(TokenType.Semicolon, ";"),
+
+            new(TokenType.String, "hello\\t\\tworld"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.String, "hello\\nworld"),
+            new(TokenType.Semicolon, ";"),
+            new(TokenType.String, "\\\"hello world\\\""),
+            new(TokenType.Semicolon, ";"),
+
+            new(TokenType.LBracket, "["),
+            new(TokenType.Int, "1"),
+            new(TokenType.Comma, ","),
+            new(TokenType.Int, "2"),
+            new(TokenType.RBracket, "]"),
+            new(TokenType.Semicolon, ";"),
+
+            new(TokenType.Lbrace, "{"),
+            new(TokenType.String, "foo"),
+            new(TokenType.Colon, ":"),
+            new(TokenType.String, "bar"),
+            new(TokenType.Rbrace, "}"),
+            new(TokenType.Semicolon, ";"),
             new(TokenType.Eof, "")
         };
 

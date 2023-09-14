@@ -141,9 +141,9 @@ if (10 > 1) {
         TestIntegerObject(evaluated, expectedValue);
     }
 
-   [Test]
-   public void TestClosures() 
-   {
+    [Test]
+    public void TestClosures() 
+    {
        var input = @"
 let newAdder = fn(x) {
     fn(y) { x + y };
@@ -153,7 +153,165 @@ addTwo(2);";
         
         var evaluated = TestEval(input);
         TestIntegerObject(evaluated, 4);
-   }
+    }
+
+    [Test]
+    public void TestStringLiteral() 
+    {
+        var input = @"""Hello World!""";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyString>(evaluated);
+        var str = evaluated as MonkeyString;
+        Assert.That(str.Value, Is.EqualTo("Hello World!"));
+    }
+
+    [Test]
+    public void TestStringConcatenation() 
+    {
+        var input = @"""Hello"" + "" "" + ""World!""";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyString>(evaluated);
+        var str = evaluated as MonkeyString;
+        Assert.That(str.Value, Is.EqualTo("Hello World!"));
+    }
+
+    [TestCase(@"""Hello"" == ""Hello""", true)]
+    [TestCase(@"""Hello"" != ""Hello""", false)]
+    [TestCase(@"""Hello"" == ""World""", false)]
+    [TestCase(@"""Hello"" != ""World""", true)]
+    public void TestStringComparison(string input, bool expected)
+    {
+        var evaluated = TestEval(input);
+        if (evaluated.GetType() != typeof(MonkeyBoolean)){
+            var error = evaluated as MonkeyError;
+            Console.WriteLine(error.Message);
+        }
+        TestBooleanObject(evaluated, expected); 
+    }
+
+    [TestCase("-")]
+    [TestCase("*")]
+    [TestCase("/")]
+    public void TestStringErrorHandling(string @operator) 
+    {
+        var input = $"\"Hello\" {@operator} \"World!\"";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyError>(evaluated);
+        var err = evaluated as MonkeyError;
+        Assert.That(err.Message, Is.EqualTo($"unknown operator: String {@operator} String"));
+    }
+
+    [TestCase("len(\"\")", 0)]
+    [TestCase("len(\"four\")", 4)]
+    [TestCase("len(\"hello world\")", 11)]
+    [TestCase("len(1)", "argument to `len` not supported, got Integer")]
+    [TestCase("len(\"one\", \"two\")", "wrong number of arguments. got=2, want=1")]
+    public void TestStringLengthBuiltinFunction(string input, object expected)
+    {
+        var evaluated = TestEval(input);
+        switch (expected){
+            case string:
+                Assert.IsInstanceOf<MonkeyError>(evaluated);
+                var err = evaluated as MonkeyError;
+                Assert.That(err.Message, Is.EqualTo(expected));
+                break;
+            case int:
+                Assert.IsInstanceOf<MonkeyInteger>(evaluated);
+                var integer = evaluated as MonkeyInteger;
+                Assert.That(integer.Value, Is.EqualTo(expected));
+                break;
+            default:
+                throw new Exception("unexpected type");
+        }
+    }
+   
+    [Test]
+    public void TestArrayLiterals() 
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyArray>(evaluated);
+        var result = evaluated as MonkeyArray;
+        Assert.That(result.Elements.Count, Is.EqualTo(3));
+        TestIntegerObject(result.Elements[0], 1);
+        TestIntegerObject(result.Elements[1], 4);
+        TestIntegerObject(result.Elements[2], 6);
+    }
+
+    [TestCase("[1,2,3][0]", 1)]
+    [TestCase("[1,2,3][1]", 2)]
+    [TestCase("[1,2,3][2]", 3)]
+    [TestCase("let i = 0; [1][i];", 1)]
+    [TestCase("[1,2,3][1 + 1];", 3)]
+    [TestCase("let myArray = [1, 2, 3]; myArray[2];", 3)]
+    [TestCase("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6)]
+    [TestCase("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2)]
+    public void TestArrayIndexExpressions(string input, Int64 expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
+    [Test]
+    public void TestHashLiterals()
+    {
+        var input = @"
+let two = ""two"";
+{
+    ""one"": 10 - 9,
+    two: 1 + 1,
+    ""thr"" + ""ee"": 6 / 2,
+    4:4,
+    true: 5,
+    false:6
+};
+";
+        var evaluated = TestEval(input);       
+        Assert.IsInstanceOf<MonkeyHash>(evaluated);
+        var result = evaluated as MonkeyHash;
+        Assert.That(result.Pairs.Count, Is.EqualTo(6));
+        var expected = new Dictionary<MonkeyHashKey, Int64>
+        {
+            {new MonkeyHashKey(ObjectType.String, "one".GetHashCode()), 1},
+            {new MonkeyHashKey(ObjectType.String, "two".GetHashCode()), 2},
+            {new MonkeyHashKey(ObjectType.String, "three".GetHashCode()), 3},
+            {new MonkeyHashKey(ObjectType.Integer, 4), 4},
+            {new MonkeyHashKey(ObjectType.Boolean, 1), 5},
+            {new MonkeyHashKey(ObjectType.Boolean, 0), 6}
+        };
+
+        foreach (var (key, value) in expected)
+        {
+            var actualValue = result.Pairs[key].Value;
+            TestIntegerObject(actualValue, value);
+        }
+    }
+
+    [TestCase("{\"foo\":5}[\"foo\"]", 5)]
+    [TestCase("{\"foo\":5}[\"bar\"]", null)]
+    [TestCase("let key = \"foo\"; {\"foo\":5}[key]", 5)]
+    [TestCase("{}[\"foo\"]", null)]
+    [TestCase("{5:5}[5]", 5)]
+    [TestCase("{true:5}[true]", 5)]
+    [TestCase("{false:5}[false]", 5)]
+    public void TestHashIndexExpressions(string input, Int64? expected)
+    {
+        var evaluated = TestEval(input);
+        if (expected == null)
+            TestNullObject(evaluated);
+        else
+            TestIntegerObject(evaluated, (Int64)expected);
+    }
+
+    [Test]
+    public void TestErrorHandling() 
+    {
+        var input = "{\"foo\":\"bar\"}[fn(x) { x }];";
+        var evaluated = TestEval(input);
+        Assert.IsInstanceOf<MonkeyError>(evaluated);
+        var err = evaluated as MonkeyError;
+        Assert.That(err.Message, Is.EqualTo("unusable as hash key: Function"));
+    }
 
     private void TestBooleanObject(MonkeyObject evaluated, bool expectedValue)
     {

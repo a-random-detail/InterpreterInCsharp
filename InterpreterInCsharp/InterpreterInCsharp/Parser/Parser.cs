@@ -27,7 +27,8 @@ public class Parser
             { TokenType.Minus, ExpressionPrecedence.Sum },
             { TokenType.Star, ExpressionPrecedence.Product },
             { TokenType.Slash, ExpressionPrecedence.Product },
-            {TokenType.Lparen, ExpressionPrecedence.Call}
+            {TokenType.Lparen, ExpressionPrecedence.Call},
+            {TokenType.LBracket, ExpressionPrecedence.Index}
         };
 
     public Parser(Lexer lexer, bool traceEnabled = false)
@@ -45,7 +46,10 @@ public class Parser
         RegisterPrefix(TokenType.Lparen, ParseGroupedExpression);
         RegisterPrefix(TokenType.If, ParseIfExpression);
         RegisterPrefix(TokenType.Function, ParseFunctionLiteral);
-        
+        RegisterPrefix(TokenType.String, ParseStringLiteral);
+        RegisterPrefix(TokenType.LBracket, ParseArrayLiteral);
+        RegisterPrefix(TokenType.Lbrace, ParseHashLiteral);
+         
         _infixParseFunctions = new Dictionary<TokenType, InfixParseFn>();
         RegisterInfix(TokenType.Plus, ParseInfixExpression);
         RegisterInfix(TokenType.Minus, ParseInfixExpression);
@@ -56,9 +60,79 @@ public class Parser
         RegisterInfix(TokenType.LessThan, ParseInfixExpression);
         RegisterInfix(TokenType.GreaterThan, ParseInfixExpression);
         RegisterInfix(TokenType.Lparen, ParseCallExpression);
+        RegisterInfix(TokenType.LBracket, ParseIndexExpression);
         
         NextToken();
         NextToken();
+    }
+
+    private Expression? ParseHashLiteral()
+    {
+        var initialToken = _curToken;
+        var pairs = new Dictionary<Expression, Expression>();
+        while (!PeekTokenIs(TokenType.Rbrace))
+        {
+            NextToken();
+            var key = ParseExpression(ExpressionPrecedence.Lowest);
+            if (!ExpectPeekTokenType(TokenType.Colon))
+                return null;
+            NextToken();
+            var value = ParseExpression(ExpressionPrecedence.Lowest);
+            pairs.Add(key, value);
+            if (!PeekTokenIs(TokenType.Rbrace) && !ExpectPeekTokenType(TokenType.Comma))
+                return null;
+        }
+
+        if (!ExpectPeekTokenType(TokenType.Rbrace))
+            return null;
+        return new HashLiteral(initialToken, pairs);
+    }
+
+    private Expression? ParseIndexExpression(Expression expression)
+    {
+        var initialToken = _curToken;
+        NextToken();
+        var index = ParseExpression(ExpressionPrecedence.Lowest);
+        if (!ExpectPeekTokenType(TokenType.RBracket))
+            return null;
+        return new IndexExpression(initialToken, expression, index);
+    }
+
+    private Expression? ParseArrayLiteral()
+    {
+        var initialToken = _curToken;
+        var elements = ParseExpressionList(TokenType.RBracket);
+        return new ArrayLiteral(initialToken, elements);
+    }
+
+    private Expression[] ParseExpressionList(TokenType endToken)
+    {
+        List<Expression> elements = new();
+        if (PeekTokenIs(endToken))
+        {
+            NextToken();
+            return elements.ToArray();
+        }
+
+        NextToken();
+        elements.Add(ParseExpression(ExpressionPrecedence.Lowest));
+
+        while(PeekTokenIs(TokenType.Comma))
+        {
+            NextToken();
+            NextToken();
+            elements.Add(ParseExpression(ExpressionPrecedence.Lowest));
+        }
+
+        if (!ExpectPeekTokenType(endToken))
+            return null;
+
+        return elements.ToArray();
+    }
+
+    private Expression? ParseStringLiteral()
+    {
+        return new StringLiteral(_curToken, _curToken.Literal);
     }
 
     public MonkeyProgram? ParseProgram()
@@ -375,32 +449,8 @@ public class Parser
     private Expression? ParseCallExpression(Expression arg)
     {
         var initialToken = _curToken;
-        var arguments = ParseCallArguments();
+        var arguments = ParseExpressionList(TokenType.Rparen);
         return new CallExpression(initialToken, arg, arguments);
-    }
-
-    private Expression[] ParseCallArguments()
-    {
-        var args = new List<Expression>();
-        if (PeekTokenIs(TokenType.Rparen))
-        {
-            NextToken();
-            return args.ToArray();
-        }
-        NextToken();
-        args.Add(ParseExpression(ExpressionPrecedence.Lowest));
-        
-        while (PeekTokenIs(TokenType.Comma))
-        {
-            NextToken();
-            NextToken();
-            args.Add(ParseExpression(ExpressionPrecedence.Lowest));
-        }
-        
-        if (!ExpectPeekTokenType(TokenType.Rparen))
-            return null;
-        
-        return args.ToArray();
     }
 
     private Expression? ParseBoolean() => new BooleanExpression(_curToken, CurrentTokenIs(TokenType.True));

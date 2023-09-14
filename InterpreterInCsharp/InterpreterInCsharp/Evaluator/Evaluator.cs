@@ -12,7 +12,10 @@ public class Evaluator
 
     public static MonkeyObject Eval(Ast.Node node, MonkeyEnvironment environment) => node switch
     {
-        
+        HashLiteral hashLiteral => EvalHashLiteral(hashLiteral, environment),
+        IndexExpression indexExpression => HandleIndexExpression(indexExpression, environment),
+        ArrayLiteral arrayLiteral => EvalArrayLiteral(arrayLiteral, environment),        
+        StringLiteral stringLiteral => new MonkeyString(stringLiteral.Value),
         CallExpression callExpression => EvalCallExpression(callExpression, environment),
         FunctionLiteral functionLiteral => new MonkeyFunction(functionLiteral.Parameters, functionLiteral.Body, environment),
         Identifier identifier => EvalIdentifier(identifier, environment),
@@ -28,6 +31,100 @@ public class Evaluator
         ExpressionStatement expr => Eval(expr.Expression, environment),
         _ => Null
     };
+
+    private static MonkeyObject EvalHashLiteral(HashLiteral hashLiteral, MonkeyEnvironment environment)
+    {
+        var pairs = new Dictionary<MonkeyHashKey, MonkeyHashPair>();
+        
+        foreach(var pair in hashLiteral.Pairs) 
+        {
+            var key = Eval(pair.Key, environment);
+            if (IsError(key))
+            {
+                return key;
+            }
+            var hashKey = key as MonkeyHashable;
+            if (hashKey == null)
+            {
+                return NewError("unusable as hash key: {0}", key.Type.ToString());
+            }
+            var value = Eval(pair.Value, environment);
+            if (IsError(value))
+            {
+                return value;
+            }
+            var hashed = hashKey.HashKey();
+            pairs.Add(hashed, new MonkeyHashPair(key, value));
+        }
+
+        return new MonkeyHash(pairs);
+    }
+
+    private static MonkeyObject HandleIndexExpression(IndexExpression indexExpression, MonkeyEnvironment environment)
+    {
+        var left = Eval(indexExpression.Left, environment);
+        if (IsError(left))
+        {
+            return left;
+        }
+        var index = Eval(indexExpression.Index, environment);
+        if (IsError(index))
+        {
+            return index;
+        }
+        return EvalIndexExpression(left, index);
+    }
+
+    private static MonkeyObject EvalIndexExpression(MonkeyObject left, MonkeyObject index)
+    {
+        return (left, index) switch
+        {
+            (MonkeyArray array, MonkeyInteger integer) => EvalArrayIndexExpression(array, integer),
+            (MonkeyHash hash, MonkeyObject key) => EvalHashIndexExpression(hash, key),
+            _ => NewError("index operator not supported: {0}", left.Type.ToString())
+        };
+    }
+
+    private static MonkeyObject EvalHashIndexExpression(MonkeyHash hash, MonkeyObject key)
+    {
+        var hashKey = key as MonkeyHashable;
+        
+        if (hashKey == null)
+        {
+            return NewError("unusable as hash key: {0}", key.Type.ToString());
+        }
+
+        if (!hash.Pairs.TryGetValue(hashKey.HashKey(), out MonkeyHashPair pair))
+        {
+            return Null;
+        }
+
+        return pair.Value;
+    }
+
+    private static MonkeyObject EvalArrayIndexExpression(MonkeyArray array, MonkeyInteger integer)
+    {
+        var idx = integer.Value;
+        var max = array.Elements.Count() - 1;
+        if (idx < 0 || idx > max)
+        {
+            return Null;
+        }
+
+        return array.Elements[idx];
+    }
+
+    private static MonkeyObject EvalArrayLiteral(ArrayLiteral arrayLiteral, MonkeyEnvironment environment)
+    {
+        var elements = EvalExpressions(arrayLiteral.Elements, environment);
+        if (elements.Count == 1 && IsError(elements[0]))
+        {
+            return null;
+        }
+
+        return new MonkeyArray(elements.ToArray());
+        
+    }
 
     private static MonkeyObject HandleInfixExpression(InfixExpression expr, MonkeyEnvironment env) 
     {
@@ -87,7 +184,14 @@ public class Evaluator
         return ApplyFunction(func, args);
     }
 
-    private static MonkeyObject ApplyFunction(MonkeyObject func, List<MonkeyObject> args)
+    private static MonkeyObject ApplyFunction(MonkeyObject func, List<MonkeyObject> args) => func switch
+    {
+        MonkeyFunction function => EvalFunctionCall(function, args),
+        MonkeyBuiltin builtin => builtin.Fn(args.ToArray()),
+        _ => NewError("not a function: {0}", func.Type.ToString())
+    };
+
+    private static MonkeyObject EvalFunctionCall(MonkeyFunction func, List<MonkeyObject> args) 
     {
         var fn = func as MonkeyFunction;
         if (fn == null)
@@ -96,7 +200,7 @@ public class Evaluator
         }
         var extendedEnv = ExtendFunctionEnvironment(fn, args);
         var evaluated = Eval(fn.Body, extendedEnv);
-        return UnwrapReturnValue(evaluated);
+        return UnwrapReturnValue(evaluated); 
     }
 
     private static MonkeyEnvironment ExtendFunctionEnvironment(MonkeyFunction fn, List<MonkeyObject> args)
@@ -138,6 +242,11 @@ public class Evaluator
         if (ok)
         {
             return val;
+        }
+
+        if (Builtins.BuiltinsMap.TryGetValue(node.Value, out MonkeyBuiltin builtin))
+        {
+            return builtin;
         }
 
         return NewError("identifier not found: {0}", node.Value);
@@ -217,6 +326,11 @@ public class Evaluator
             return EvalIntegerInfixExpression(expr.Operator, left, right);
         }
 
+        if (left.Type == ObjectType.String && right.Type == ObjectType.String)
+        {
+            return EvalStringInfixExpression(expr.Operator, left, right);
+        }
+
         if (left.Type != right.Type) {
             return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), expr.Operator, right.Type.ToString());
         }
@@ -229,17 +343,36 @@ public class Evaluator
         };
     }
 
-    private static MonkeyObject EvalIntegerInfixExpression(string exprOperator, MonkeyObject left, MonkeyObject right)
+    private static MonkeyObject EvalStringInfixExpression(string @operator, MonkeyObject left, MonkeyObject right)
+    {
+       MonkeyString? l = left as MonkeyString; 
+       MonkeyString? r = right as MonkeyString;
+
+       if (l == null || r == null)
+       {
+           return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString());
+       }
+
+       return @operator switch
+       {
+           "+" => new MonkeyString(l.Value + r.Value),
+           "==" => NativeBoolToBoolean(l.Value.Equals(r.Value)),
+           "!=" => NativeBoolToBoolean(!l.Value.Equals(r.Value)),
+           _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString())
+       };
+    }
+
+    private static MonkeyObject EvalIntegerInfixExpression(string @operator, MonkeyObject left, MonkeyObject right)
     {
         MonkeyInteger? l = left as MonkeyInteger;
         MonkeyInteger? r = right as MonkeyInteger;
 
         if (l == null || r == null)
         {
-            return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), exprOperator, right.Type.ToString());
+            return NewError("type mismatch: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString());
         }
 
-        return exprOperator switch
+        return @operator switch
         {
             "*" => new MonkeyInteger(l.Value * r.Value),
             "/" => new MonkeyInteger(l.Value / r.Value),
@@ -249,7 +382,7 @@ public class Evaluator
             ">" => NativeBoolToBoolean(l.Value > r.Value),
             "==" => NativeBoolToBoolean(l.Value == r.Value),
             "!=" => NativeBoolToBoolean(l.Value != r.Value),
-            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), exprOperator, right.Type.ToString()) 
+            _ => NewError("unknown operator: {0} {1} {2}", left.Type.ToString(), @operator, right.Type.ToString()) 
         };
     }
 

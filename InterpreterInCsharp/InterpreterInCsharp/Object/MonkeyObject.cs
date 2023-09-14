@@ -9,7 +9,11 @@ public enum ObjectType
     Null,
     ReturnValue,
     Error,
-    Function
+    Function,
+    String,
+    Builtin,
+    Array,
+    Hash,
 }
 public interface MonkeyObject
 {
@@ -17,16 +21,25 @@ public interface MonkeyObject
     string Inspect();
 }
 
-public record MonkeyInteger(Int64 Value) : MonkeyObject
+public record MonkeyInteger(Int64 Value) : MonkeyObject, MonkeyHashable
 {
     public ObjectType Type => ObjectType.Integer;
     public string Inspect() => Value.ToString("D");
+    public MonkeyHashKey HashKey() => new(ObjectType.Integer, Value);
 }
 
-public record MonkeyBoolean(bool Value) : MonkeyObject
+public record MonkeyBoolean(bool Value) : MonkeyObject, MonkeyHashable
 {
     public ObjectType Type => ObjectType.Boolean;
     public string Inspect() => Value.ToString();
+    public MonkeyHashKey HashKey() => new(ObjectType.Boolean, Value ? 1 : 0);
+}
+
+public record MonkeyString(string Value) : MonkeyObject, MonkeyHashable
+{
+    public ObjectType Type => ObjectType.String;
+    public string Inspect() => Value;
+    public MonkeyHashKey HashKey() => new(ObjectType.String, Value.GetHashCode());
 }
 
 public record MonkeyNull : MonkeyObject
@@ -53,3 +66,24 @@ public record MonkeyFunction(Identifier[] Parameters, BlockStatement Body, Monke
     public string Inspect() => $"fn({string.Join(", ", Parameters.Select(p => p.String))}) {{\n{Body.String}\n}}";
 }
 
+public record MonkeyBuiltin(Func<MonkeyObject[], MonkeyObject> Fn) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Builtin;
+    public string Inspect() => "builtin function";
+}
+
+public record MonkeyArray(MonkeyObject[] Elements) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Array;
+    public string Inspect() => $"[{string.Join(", ", Elements.Select(e => e.Inspect()))}]";
+}
+
+public record MonkeyHashKey(ObjectType Type, Int64 Value){}
+
+public record MonkeyHashPair(MonkeyObject Key, MonkeyObject Value){}
+
+public record MonkeyHash(Dictionary<MonkeyHashKey, MonkeyHashPair> Pairs) : MonkeyObject
+{
+    public ObjectType Type => ObjectType.Hash;
+    public string Inspect() => $"{{{string.Join(", ", Pairs.Select(p => $"{p.Value.Key.Inspect()}: {p.Value.Value.Inspect()}"))}}}";
+}
